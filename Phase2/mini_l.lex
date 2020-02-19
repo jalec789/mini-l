@@ -1,6 +1,6 @@
 %{
 #include <unistd.h>
-#include <y.tab.h>
+#include "y.tab.h"
 %}
 	//DEFINITIONS
 
