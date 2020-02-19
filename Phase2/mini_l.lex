@@ -96,7 +96,7 @@ return			column = column + yyleng; return RETURN;
 
 
 	/* More Errors */
-.					/*printf("Error at line %d, column %d: unrecognized symbol \"%.*s\"\n",line, column, yyleng, yytext);*/ column = column + yyleng; //exit(1);
+.					/*printf("Error at line %d, column %d: unrecognized symbol \"%.*s\"\n",line, column, yyleng, yytext);*/ //column = column + yyleng; //exit(1);
 
 
 %%

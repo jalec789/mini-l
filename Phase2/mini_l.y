@@ -6,6 +6,8 @@
 	extern int line;
 	extern int column;
 	FILE * yyin;
+	extern char* yytext;
+	extern int yyleng;
 %}
 
 %union{
@@ -20,21 +22,23 @@
 %token <id> IDENT
 %token <num> NUMBER
 
-%left ASSIGN	//this goes here i think??? precedence 9
-%left AND OR
+%left ASSIGN
+%left OR
+%left AND
 %right NOT
 %left LT LTE GT GTE EQ NEQ
-%left DIV MULT MOD ADD SUB
-%nonassoc UMINUS	//is this right, where will it get used, will it be like minicalc???
-%token L_PAREN R_PAREN L_SQUARE_BRACKET R_SQUARE_BRACKET
-	//%left ASSIGN		//maybe??? or down here?
+%left ADD SUB
+%left DIV MULT MOD
+%nonassoc UMINUS
+%token L_SQUARE_BRACKET R_SQUARE_BRACKET
+%token L_PAREN R_PAREN
 
 
 
 
 %%
 prog_start: %empty	{printf("prog_start -> epsilon\n");}
-		| function prog_start {printf("prog_start -> function\n");}
+		| function prog_start {printf("prog_start -> function prog_start\n");}
 ;
 
 
@@ -61,8 +65,8 @@ statements:	statement SEMICOLON statements {printf("statements -> statement SEMI
 		| statement SEMICOLON {printf("statements -> statement SEMICOLON\n");}
 ;
 statement: var ASSIGN expression {printf("statement -> var ASSIGN expression\n");}
-		| IF bool-expr THEN statements ENDIF {printf("statement -> IF bool-expr THEN statements ENDIF");/*did i do this one right???*/}	
-		| IF bool-expr THEN statements ELSE statements ENDIF {printf("statement -> IF bool-expr THEN statements ELSE statements ENDIF");/*check diagram on bool-expr or bool-exp???*/}
+		| IF bool-expr THEN statements ENDIF {printf("statement -> IF bool-expr THEN statements ENDIF");}	
+		| IF bool-expr THEN statements ELSE statements ENDIF {printf("statement -> IF bool-expr THEN statements ELSE statements ENDIF");}
 		| WHILE bool-expr BEGINLOOP statements ENDLOOP {printf("statement -> WHILE bool-expr BEGINLOOP statements ENDLOOP\n");}
 		| DO BEGINLOOP statements ENDLOOP WHILE bool-expr {printf("statement -> DO BEGINLOOP statements ENDLOOP WHILE bool-expr\n");}
 		| FOR var ASSIGN NUMBER SEMICOLON bool-expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP {printf("FOR var ASSIGN NUMBER SEMICOLON bool-expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP\n");}
@@ -120,9 +124,9 @@ multiplicative-expr: term {printf("multiplicative-expr -> term\n");}
 term:	var {printf("term -> var\n");}
 		| NUMBER {printf("term -> NUMBER\n");}
 		| L_PAREN expression R_PAREN {printf("term -> L_PAREN expression R_PAREN\n");}
-		| UMINUS var {printf("term -> UMINUS var");/*not sure if i need to use UMINUS or SUB???*/}
-		| UMINUS NUMBER {printf("term -> UMINUS NUMBER\n");}
-		| UMINUS L_PAREN expression R_PAREN {printf("term -> UMINUS L_PAREN expression R_PAREN\n");}
+		| SUB var %prec UMINUS {printf("term -> SUB var ");}
+		| SUB NUMBER %prec UMINUS {printf("term -> SUB NUMBER\n");}
+		| SUB L_PAREN expression R_PAREN %prec UMINUS {printf("term -> SUB L_PAREN expression R_PAREN\n");}
 		| identifier L_PAREN expressions R_PAREN {printf("term -> identifier L_PAREN expressions R_PAREN\n");}
 		| identifier L_PAREN R_PAREN {printf("term -> identifier L_PAREN R_PAREN\n");}
 ;
@@ -154,8 +158,9 @@ int main(int argc, char **argv) {
 
 
 void yyerror(const char *msg) {
-	//poistion is incorrect???
 	printf("** Line %d, position %d: %s\n", line, column, msg);
+	//printf("");
+	
 
 	//this did not work with strdup ???
 	//printf("Error at line %d, column %d: unrecognized symbol \"%.*s\"\n",line, column, yyleng, yytext);
