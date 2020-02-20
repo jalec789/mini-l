@@ -61,7 +61,7 @@ declarations: %empty {printf("declarations -> epsilon\n");}
 ;
 
 
-statements:	statement SEMICOLON statements {printf("statements -> statement SEMICOLON statements\n");}
+statements: statement SEMICOLON statements {printf("statements -> statement SEMICOLON statements\n");}
 		| statement SEMICOLON {printf("statements -> statement SEMICOLON\n");}
 ;
 statement: var ASSIGN expression {printf("statement -> var ASSIGN expression\n");}
@@ -97,7 +97,7 @@ relation-expr: expression comp expression {printf("relation-expr -> expression c
 		| NOT L_PAREN bool-expr R_PAREN {printf("relation-expr -> NOT L_PAREN bool-expr R_PAREN\n");}
 ;
 
-comp:	EQ {printf("comp -> EQ\n");}
+comp: EQ {printf("comp -> EQ\n");}
 		| NEQ {printf("comp -> NEQ\n");}
 		| LT {printf("comp -> LT\n");}
 		| GT {printf("comp -> GT\n");}
@@ -108,7 +108,7 @@ comp:	EQ {printf("comp -> EQ\n");}
 expressions: expression {printf("expressions -> expression\n");}
 		| expression COMMA expressions {printf("expressions -> expression COMMA expressions\n");}
 ;
-expression:	multiplicative-expr {printf("expression -> multiplicative-expr\n");}
+expression: multiplicative-expr {printf("expression -> multiplicative-expr\n");}
 		| multiplicative-expr ADD expression {printf("expression -> multiplicative-expr ADD expression\n");}
 		| multiplicative-expr SUB expression {printf("expression -> multiplicative-expr SUB expression \n");}
 ;
@@ -121,7 +121,7 @@ multiplicative-expr: term {printf("multiplicative-expr -> term\n");}
 ;
 
 
-term:	var {printf("term -> var\n");}
+term: var {printf("term -> var\n");}
 		| NUMBER {printf("term -> NUMBER\n");}
 		| L_PAREN expression R_PAREN {printf("term -> L_PAREN expression R_PAREN\n");}
 		| SUB var %prec UMINUS {printf("term -> SUB var ");}

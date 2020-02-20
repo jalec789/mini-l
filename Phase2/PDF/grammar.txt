@@ -1,0 +1,103 @@
+<prog_start> ::= $\epsilon$
+		\alt <function> <prog_start> 
+
+
+
+<function> ::= 'FUNCTION' <identifier> 'SEMICOLON'	'BEGIN_PARAMS' <declarations> 'END_PARAMS' 'BEGIN_LOCALS' <declarations> 'END_LOCALS' 'BEGIN_BODY' <statements> 'END_BODY' 
+
+
+
+<identifier> ::= 'IDENT' 
+
+<identifiers> ::= <identifier>	
+		\alt <identifier> 'COMMA' <identifiers>	
+
+
+
+<declaration> ::= <identifiers> 'COLON' 'ARRAY' 'L_SQUARE_BRACKET' 'NUMBER' 'R_SQUARE_BRACKET' 'OF' 'INTEGER' 
+		\alt <identifiers> 'COLON' 'INTEGER' 
+
+<declarations> ::= $\epsilon$
+		\alt <declaration> 'SEMICOLON' <declarations> 
+
+
+
+<statements> ::= <statement> 'SEMICOLON' <statements> 
+		\alt <statement> 'SEMICOLON' 
+
+<statement> ::= <var> 'ASSIGN' <expression> 
+		\alt 'IF' <bool-expr> 'THEN' <statements> 'ENDIF' 	
+		\alt 'IF' <bool-expr> 'THEN' <statements> 'ELSE' <statements> 'ENDIF' 
+		\alt 'WHILE' <bool-expr> 'BEGINLOOP' <statements> 'ENDLOOP' 
+		\alt 'DO' 'BEGINLOOP' <statements> 'ENDLOOP' 'WHILE' <bool-expr> 
+		\alt 'FOR' <var> 'ASSIGN' 'NUMBER' 'SEMICOLON' <bool-expr> 'SEMICOLON' <var> 'ASSIGN' <expression> 'BEGINLOOP' <statements> 'ENDLOOP' 
+		\alt 'READ' <vars> 
+		\alt 'WRITE' <vars> 
+		\alt 'CONTINUE' 
+		\alt 'RETURN' <expression> 
+
+
+
+<bool-expr> ::= <relation-and-expr> 
+		\alt <relation-and-expr> 'OR' <bool-expr> 
+
+
+
+<relation-and-expr> ::= <relation-expr> 
+		\alt <relation-expr> 'AND' <relation-and-expr> 
+
+
+
+<relation-expr> ::= <expression> <comp> <expression> 
+		\alt 'TRUE' 
+		\alt 'FALSE' 
+		\alt 'L_PAREN' <bool-expr> 'R_PAREN' 
+		\alt 'NOT' <expression> <comp> <expression> 
+		\alt 'NOT' 'TRUE' 
+		\alt 'NOT' 'FALSE' 
+		\alt 'NOT' 'L_PAREN' <bool-expr> 'R_PAREN' 
+
+
+<comp> ::= 'EQ' 
+		\alt 'NEQ' 
+		\alt 'LT' 
+		\alt 'GT' 
+		\alt 'LTE' 
+		\alt 'GTE' 
+
+
+<expressions> ::= <expression> 
+		\alt <expression> 'COMMA' <expressions> 
+
+<expression> ::= <multiplicative-expr> 
+		\alt <multiplicative-expr> 'ADD' <expression> 
+		\alt <multiplicative-expr> 'SUB' <expression> 
+
+
+
+<multiplicative-expr> ::= <term> 
+		\alt <term> 'MULT' <multiplicative-expr> 
+		\alt <term> 'DIV' <multiplicative-expr> 
+		\alt <term> 'MOD' <multiplicative-expr> 
+
+
+
+<term> ::= <var> 
+		\alt 'NUMBER' 
+		\alt 'L_PAREN' <expression> 'R_PAREN' 
+		\alt 'SUB' <var>
+		\alt 'SUB' 'NUMBER'
+		\alt 'SUB' 'L_PAREN' <expression> 'R_PAREN'
+		\alt <identifier> 'L_PAREN' <expressions> 'R_PAREN' 
+		\alt <identifier> 'L_PAREN' 'R_PAREN' 
+
+
+
+<vars> ::= <var> 
+		\alt<var> 'COMMA' <vars> 
+
+<var> ::= <identifier> 
+		\alt <identifier> 'L_SQUARE_BRACKET' <expression> 'R_SQUARE_BRACKET' 
+
+
+
