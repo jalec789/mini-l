@@ -65,8 +65,8 @@ statements: statement SEMICOLON statements {printf("statements -> statement SEMI
 		| statement SEMICOLON {printf("statements -> statement SEMICOLON\n");}
 ;
 statement: var ASSIGN expression {printf("statement -> var ASSIGN expression\n");}
-		| IF bool-expr THEN statements ENDIF {printf("statement -> IF bool-expr THEN statements ENDIF");}	
-		| IF bool-expr THEN statements ELSE statements ENDIF {printf("statement -> IF bool-expr THEN statements ELSE statements ENDIF");}
+		| IF bool-expr THEN statements ENDIF {printf("statement -> IF bool-expr THEN statements ENDIF\n");}	
+		| IF bool-expr THEN statements ELSE statements ENDIF {printf("statement -> IF bool-expr THEN statements ELSE statements ENDIF\n");}
 		| WHILE bool-expr BEGINLOOP statements ENDLOOP {printf("statement -> WHILE bool-expr BEGINLOOP statements ENDLOOP\n");}
 		| DO BEGINLOOP statements ENDLOOP WHILE bool-expr {printf("statement -> DO BEGINLOOP statements ENDLOOP WHILE bool-expr\n");}
 		| FOR var ASSIGN NUMBER SEMICOLON bool-expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP {printf("FOR var ASSIGN NUMBER SEMICOLON bool-expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP\n");}
@@ -124,7 +124,7 @@ multiplicative-expr: term {printf("multiplicative-expr -> term\n");}
 term: var {printf("term -> var\n");}
 		| NUMBER {printf("term -> NUMBER\n");}
 		| L_PAREN expression R_PAREN {printf("term -> L_PAREN expression R_PAREN\n");}
-		| SUB var %prec UMINUS {printf("term -> SUB var ");}
+		| SUB var %prec UMINUS {printf("term -> SUB var\n");}
 		| SUB NUMBER %prec UMINUS {printf("term -> SUB NUMBER\n");}
 		| SUB L_PAREN expression R_PAREN %prec UMINUS {printf("term -> SUB L_PAREN expression R_PAREN\n");}
 		| identifier L_PAREN expressions R_PAREN {printf("term -> identifier L_PAREN expressions R_PAREN\n");}
