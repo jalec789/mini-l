@@ -46,14 +46,16 @@ function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEG
 ;
 
 
-identifier: IDENT {printf("identifier -> IDENT\n");}
+identifier: IDENT {printf("identifier -> IDENT %s\n", $1);}
 ;
 identifiers: identifier	{printf("identifiers -> identifier\n");}
 		| identifier COMMA identifiers	{printf("identifiers -> identifier COMMA identifiers\n");}
 ;
 
+number: NUMBER {printf("number -> NUMBER %d\n", $1);}
+;
 
-declaration: identifiers COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {printf("declaration -> identifiers COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER\n");}
+declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF INTEGER {printf("declaration -> identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF INTEGER\n");}
 		| identifiers COLON INTEGER {printf("declaration -> identifiers COLON INTEGER\n");}
 ;
 declarations: %empty {printf("declarations -> epsilon\n");}
@@ -65,11 +67,11 @@ statements: statement SEMICOLON statements {printf("statements -> statement SEMI
 		| statement SEMICOLON {printf("statements -> statement SEMICOLON\n");}
 ;
 statement: var ASSIGN expression {printf("statement -> var ASSIGN expression\n");}
-		| IF bool-expr THEN statements ENDIF {printf("statement -> IF bool-expr THEN statements ENDIF");}	
-		| IF bool-expr THEN statements ELSE statements ENDIF {printf("statement -> IF bool-expr THEN statements ELSE statements ENDIF");}
+		| IF bool-expr THEN statements ENDIF {printf("statement -> IF bool-expr THEN statements ENDIF\n");}	
+		| IF bool-expr THEN statements ELSE statements ENDIF {printf("statement -> IF bool-expr THEN statements ELSE statements ENDIF\n");}
 		| WHILE bool-expr BEGINLOOP statements ENDLOOP {printf("statement -> WHILE bool-expr BEGINLOOP statements ENDLOOP\n");}
 		| DO BEGINLOOP statements ENDLOOP WHILE bool-expr {printf("statement -> DO BEGINLOOP statements ENDLOOP WHILE bool-expr\n");}
-		| FOR var ASSIGN NUMBER SEMICOLON bool-expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP {printf("FOR var ASSIGN NUMBER SEMICOLON bool-expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP\n");}
+		| FOR var ASSIGN number SEMICOLON bool-expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP {printf("FOR var ASSIGN number SEMICOLON bool-expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP\n");}
 		| READ vars {printf("statement -> READ vars\n");}
 		| WRITE vars {printf("statement -> WRITE vars\n");}
 		| CONTINUE {printf("statement -> CONTINUE\n");}
@@ -122,10 +124,10 @@ multiplicative-expr: term {printf("multiplicative-expr -> term\n");}
 
 
 term: var {printf("term -> var\n");}
-		| NUMBER {printf("term -> NUMBER\n");}
+		| number {printf("term -> number\n");}
 		| L_PAREN expression R_PAREN {printf("term -> L_PAREN expression R_PAREN\n");}
-		| SUB var %prec UMINUS {printf("term -> SUB var ");}
-		| SUB NUMBER %prec UMINUS {printf("term -> SUB NUMBER\n");}
+		| SUB var %prec UMINUS {printf("term -> SUB var\n");}
+		| SUB number %prec UMINUS {printf("term -> SUB number\n");}
 		| SUB L_PAREN expression R_PAREN %prec UMINUS {printf("term -> SUB L_PAREN expression R_PAREN\n");}
 		| identifier L_PAREN expressions R_PAREN {printf("term -> identifier L_PAREN expressions R_PAREN\n");}
 		| identifier L_PAREN R_PAREN {printf("term -> identifier L_PAREN R_PAREN\n");}

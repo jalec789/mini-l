@@ -81,7 +81,7 @@ return			column = column + yyleng; return RETURN;
 
 
 	/*Numbers only*/
-{DIGIT}+		/*printf("NUMBER %.*s\n", yyleng, yytext);*/ column = column + yyleng; return NUMBER;
+{DIGIT}+		{/*printf("NUMBER %.*s\n", yyleng, yytext);*/ column = column + yyleng; yylval.num = atof(yytext); return NUMBER;}
 
 
 	/* Errors */
@@ -92,7 +92,7 @@ return			column = column + yyleng; return RETURN;
 
 
 	/*Identifiers only*/
-{LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*			/*printf("IDENT %.*s\n", yyleng, yytext);*/ column = column + yyleng; return IDENT;
+{LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*			{/*printf("IDENT %.*s\n", yyleng, yytext);*/ column = column + yyleng; yylval.id = yytext; return IDENT;}
 
 
 	/* More Errors */
