@@ -5,9 +5,10 @@
 	void yyerror(const char *msg);
 	extern int line;
 	extern int column;
-	FILE * yyin;
+	extern FILE * yyin;
 	extern char* yytext;
 	extern int yyleng;
+	extern int yylex(void);
 %}
 
 %union{
@@ -37,8 +38,11 @@
 
 
 %%
-prog_start: %empty	{printf("prog_start -> epsilon\n");}
-		| function prog_start {printf("prog_start -> function prog_start\n");}
+prog_start: %empty	{printf("prog_start -> epsilon\n");
+
+}
+		| function prog_start {printf("prog_start -> function prog_start\n");
+}
 ;
 
 
