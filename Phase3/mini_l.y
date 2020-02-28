@@ -1,5 +1,7 @@
 %{
 	//#include <*.h>
+	#include <iostream>
+	#include <string>
  	#include <stdio.h>
  	#include <stdlib.h>
 	void yyerror(const char *msg);
@@ -9,6 +11,8 @@
 	extern char* yytext;
 	extern int yyleng;
 	extern int yylex(void);
+
+	using namespace std;
 %}
 
 %union{
@@ -34,26 +38,46 @@
 %token L_SQUARE_BRACKET R_SQUARE_BRACKET
 %token L_PAREN R_PAREN
 
+%type <id> identifier prog_start
+%type <num> number
 
 
 
 %%
-prog_start: %empty	{printf("prog_start -> epsilon\n");
-
+prog_start: %empty	{
+	/*cout << "prog_start -> epsilon\n";*/
 }
-		| function prog_start {printf("prog_start -> function prog_start\n");
+		| function prog_start {
+	/*printf("prog_start -> function prog_start\n");*/
+	
+	//CREATE VECTOR...
 }
 ;
 
 
-function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY {printf("function -> FUNCTION identifier SEMICOLON BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY\n");}
+function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY {
+	/*printf("function -> FUNCTION identifier SEMICOLON BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY\n");*/
+
+	//CREATE VECTOR of VECTORS...
+	//cout << "func" << $2;
+}
 ;
 
 
-identifier: IDENT {printf("identifier -> IDENT %s\n", $1);}
+identifier: IDENT { 
+	//cout << $1 << endl;
+	$$ = $1;
+}
 ;
-identifiers: identifier	{printf("identifiers -> identifier\n");}
-		| identifier COMMA identifiers	{printf("identifiers -> identifier COMMA identifiers\n");}
+identifiers: identifier	{
+	//vector<string>* vec = new vector<string>();
+	//vec.push_back($1);
+	//$$ = vec;
+	//cout << $1;
+	
+}
+		| identifier COMMA identifiers	{
+}
 ;
 
 number: NUMBER {printf("number -> NUMBER %d\n", $1);}
