@@ -1,4 +1,4 @@
-fibonacci
+func fibonacci
 . k
 = k, $0
 . __temp__0

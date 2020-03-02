@@ -1,4 +1,4 @@
-n fibonacci;
+function fibonacci;
 beginparams
 	k : integer;
 endparams
