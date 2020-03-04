@@ -5,7 +5,7 @@
 	#include <string>
 	#include <stdio.h>
 	#include <stdlib.h>
-	void yyerror(const char *msg);
+	void yyerror(const char *MSG);
 	extern int line;
 	extern int column;
 	extern FILE * yyin;
@@ -16,9 +16,13 @@
 	using namespace std;
 
 	struct symbol{
-		string symbol;
-		vector<int> line;
+		string symb;
+		int ln;
+		//vector<int> line;
+		// should we also have a position to know what varibles to order within a line???
 	};
+
+	vector<symbol> symbol_table;
 
 %}
 
@@ -76,6 +80,10 @@ identifier: IDENT {
 	//cout << $1 << endl;
 	//cout << $1 << endl;
 	//$$ = $1;
+	symbol a;
+	a.symb = $1;
+	a.ln = line;
+	symbol_table.push_back(a);
 }
 ;
 identifiers: identifier	{
@@ -192,12 +200,21 @@ int main(int argc, char **argv) {
 		}
 	}
 	yyparse(); // Calls yylex() for tokens.
+
+
+	for(int i = 0; i < symbol_table.size(); i++){
+		cout << symbol_table[i].symb << " : " << symbol_table[i].ln << endl;
+	}
+
+
+
+
 	return 0;
 }
 
 
-void yyerror(const char *msg) {
-	printf("** Line %d, position %d: %s\n", line, column, msg);
+void yyerror(const char *MSG) {
+	printf("** Line %d, position %d: %s\n", line, column, MSG);
 	//printf("");
 	
 
