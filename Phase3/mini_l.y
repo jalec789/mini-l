@@ -74,9 +74,7 @@ prog_start: %empty	{
 	//CREATE VECTOR of functions
 };
 
-
-function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY {
-	/*printf("function -> FUNCTION identifier SEMICOLON BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY\n");*/
+/* function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY {
 
 	//string identify;
 	
@@ -86,32 +84,61 @@ function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEG
 	}
 	instruction_list.clear();
 	scope_symbol_table.clear();
-};
+}; */
 
 
-// I might fo it this way. it'll be way more organized
-/*
+// I might fo it this way. it'll be way more organized. need to replace function rule though...
 
 function: function_id SEMICOLON	params locals body {
-
+	for(int i = 0; i < instruction_list.size(); i++) {
+		cout << instruction_list[i] << endl;
+	}
+	instruction_list.clear();
+	scope_symbol_table.clear();
 };
 
 function_id: FUNCTION identifier {
+	//we dont use this since this is the first one
+	/*for(int i = 0; i < instruction_list.size(); i++) {
+		cout << instruction_list[i] << endl;
+	}*/
 
-};
+	//instruction_list.push_back("func " + string($2));
+	cout << "func " + string($2) << endl;
+};//now we can separate the function id from the var id
 
 params: BEGIN_PARAMS declarations END_PARAMS {
 
+	cout << "PARAMS" << endl;
+	for(int i = 0; i < instruction_list.size(); i++) {
+		//cout << instruction_list[i] << endl;
+		//cout << "= " << "(varible)" << ", $" << i << endl; 
+	}
+	instruction_list.clear();
+	//We might need to track declarations with a list idk...
+
+	//Now we can print $0 here for param values...
+	//...
 };
 
 locals: BEGIN_LOCALS declarations END_LOCALS {
 
+	cout << "LOCALS" << endl;
+	/*for(int i = 0; i < instruction_list.size(); i++) {
+		cout << instruction_list[i] << endl;
+	}
+	instruction_list.clear();*/
+
 };
 
 body: BEGIN_BODY statements END_BODY {
+	cout << "BODY" << endl;
+	/*for(int i = 0; i < instruction_list.size(); i++) {
+		cout << instruction_list[i] << endl;
+	}
+	instruction_list.clear();*/
 
 };
-*/
 
 
 
