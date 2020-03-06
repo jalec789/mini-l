@@ -15,16 +15,24 @@
 
 	using namespace std;
 
-	vector<string> function_symbol_table;
-	vector<string> scope_symbol_table;
+	vector<string> functions_symbol_table;
+	vector<string> scope_symbol_table;	//clear after each function is done
 
-	//newtemp vector
 
-	//newtemp function
+	//temporaries...
+	//newtemp vectors
+	vector<string> temp_var;
+	//newtemp functions
+	vector<string> temp_func;
+	//newlabel vectors
+	vector<string> label_var;
+	//newlabel functions
+	vector<string> label_func;
 
-	//newlabel vector
 
-	//newlabel function
+	//interpreter string for each function
+	vector<string> instruction_list;
+	int listId = 0;	//for every line added to list for a function
 
 %}
 
@@ -51,7 +59,7 @@
 %token L_SQUARE_BRACKET R_SQUARE_BRACKET
 %token L_PAREN R_PAREN
 
-%type <id> identifier identifiers prog_start function
+%type <id> identifier identifiers function
 %type <num> number
 
 
@@ -64,8 +72,7 @@ prog_start: %empty	{
 	/*printf("prog_start -> function prog_start\n");*/
 	
 	//CREATE VECTOR of functions
-}
-;
+};
 
 
 function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY {
@@ -74,14 +81,39 @@ function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEG
 	//string identify;
 	
 	cout << "func " << $2 << endl;
-}
-;
+	for(int i = 0; i < instruction_list.size(); i++) {
+		cout << instruction_list[i] << endl;
+	}
+	instruction_list.clear();
+	scope_symbol_table.clear();
+};
 
 
-//function_ID: FUNCTION identifier {
-//	cout << "func " << $$ << endl;
-//}
-//;
+// I might fo it this way. it'll be way more organized
+/*
+
+function: function_id SEMICOLON	params locals body {
+
+};
+
+function_id: FUNCTION identifier {
+
+};
+
+params: BEGIN_PARAMS declarations END_PARAMS {
+
+};
+
+locals: BEGIN_LOCALS declarations END_LOCALS {
+
+};
+
+body: BEGIN_BODY statements END_BODY {
+
+};
+*/
+
+
 
 identifier: IDENT { 
 	//$$ = $1;
@@ -91,33 +123,38 @@ identifier: IDENT {
 	//symbol_table.push_back(a);
 	//cout << "\t" << $1 << endl;
 	$$ = $1;	//pushes id up the tree
-}
-;
+};
 identifiers: identifier	{
 	//vector<string>* vec = new vector<string>();
 	//vec.push_back($1);
 	//$$ = vec;
-	cout << $1 << endl;
-	//$$ = $1;
+	//cout << $1 << endl;
+	$$ = $1; //must be passed up tree since it can be integer ID or function ID
 	
 }
-		| identifier COMMA identifiers	{
-	
+		| identifiers COMMA identifier {
+	instruction_list.push_back(". " + string($3));
+};
+
+
+number: NUMBER {
+	$$ = $1;
+};
+
+
+declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF INTEGER {
+	instruction_list.push_back(".[] " + string($1) + ", " + to_string($5));
 }
-;
-
-number: NUMBER {/*printf("number -> NUMBER %d\n", $1);*/}
-;
-
-declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF INTEGER {}
-		| identifiers COLON INTEGER {}
-;
+		| identifiers COLON INTEGER {
+	instruction_list.push_back(". " + string($1));
+	//cout << ". " << $1 << endl;
+};
 declarations: %empty {}
 		| declaration SEMICOLON declarations {
-
-//CREATE VECTOR of VECTORS... new scope add to the stack
-}
-;
+	//CREATE VECTOR of VECTORS... new scope add to the stack
+	//...
+	
+};
 
 
 statements: statement SEMICOLON statements {}
@@ -167,6 +204,7 @@ comp: EQ {}
 expressions: expression {}
 		| expression COMMA expressions {}
 ;
+
 expression: multiplicative-expr {}
 		| multiplicative-expr ADD expression {}
 		| multiplicative-expr SUB expression {}
@@ -179,7 +217,7 @@ multiplicative-expr: term {}
 		| term MOD multiplicative-expr {}
 ;
 
-
+	//remember that a function call is a term. should we add more rules???
 term: var {}
 		| number {}
 		| L_PAREN expression R_PAREN {}
