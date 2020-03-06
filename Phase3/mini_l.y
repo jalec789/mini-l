@@ -15,14 +15,16 @@
 
 	using namespace std;
 
-	struct symbol{
-		string symb;
-		int ln;
-		//vector<int> line;
-		// should we also have a position to know what varibles to order within a line???
-	};
+	vector<string> function_symbol_table;
+	vector<string> scope_symbol_table;
 
-	vector<symbol> symbol_table;
+	//newtemp vector
+
+	//newtemp function
+
+	//newlabel vector
+
+	//newlabel function
 
 %}
 
@@ -49,7 +51,7 @@
 %token L_SQUARE_BRACKET R_SQUARE_BRACKET
 %token L_PAREN R_PAREN
 
-%type <id> identifier prog_start
+%type <id> identifier identifiers prog_start function
 %type <num> number
 
 
@@ -61,7 +63,7 @@ prog_start: %empty	{
 		| function prog_start {
 	/*printf("prog_start -> function prog_start\n");*/
 	
-	//CREATE VECTOR...
+	//CREATE VECTOR of functions
 }
 ;
 
@@ -69,31 +71,38 @@ prog_start: %empty	{
 function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY {
 	/*printf("function -> FUNCTION identifier SEMICOLON BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY\n");*/
 
-	//CREATE VECTOR of VECTORS... new scope add to the stack
 	//string identify;
-	cout << "func " << (string($2)).substr(0, (string($2)).find(";")) << endl;
+	
+	cout << "func " << $2 << endl;
 }
 ;
 
 
+//function_ID: FUNCTION identifier {
+//	cout << "func " << $$ << endl;
+//}
+//;
+
 identifier: IDENT { 
-	//cout << $1 << endl;
-	//cout << $1 << endl;
 	//$$ = $1;
-	symbol a;
-	a.symb = $1;
-	a.ln = line;
-	symbol_table.push_back(a);
+	//symbol a;
+	//a.symb = $1;
+	//a.ln = line;
+	//symbol_table.push_back(a);
+	//cout << "\t" << $1 << endl;
+	$$ = $1;	//pushes id up the tree
 }
 ;
 identifiers: identifier	{
 	//vector<string>* vec = new vector<string>();
 	//vec.push_back($1);
 	//$$ = vec;
-	//cout << $1;
+	cout << $1 << endl;
 	//$$ = $1;
+	
 }
 		| identifier COMMA identifiers	{
+	
 }
 ;
 
@@ -104,7 +113,10 @@ declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF
 		| identifiers COLON INTEGER {}
 ;
 declarations: %empty {}
-		| declaration SEMICOLON declarations {}
+		| declaration SEMICOLON declarations {
+
+//CREATE VECTOR of VECTORS... new scope add to the stack
+}
 ;
 
 
@@ -112,7 +124,7 @@ statements: statement SEMICOLON statements {}
 		| statement SEMICOLON {}
 ;
 statement: var ASSIGN expression {}
-		| IF bool-expr THEN statements ENDIF {}	
+		| IF bool-expr THEN statements ENDIF {/* START TESTING HERE */}	
 		| IF bool-expr THEN statements ELSE statements ENDIF {}
 		| WHILE bool-expr BEGINLOOP statements ENDLOOP {}
 		| DO BEGINLOOP statements ENDLOOP WHILE bool-expr {}
@@ -202,9 +214,9 @@ int main(int argc, char **argv) {
 	yyparse(); // Calls yylex() for tokens.
 
 
-	for(int i = 0; i < symbol_table.size(); i++){
-		cout << symbol_table[i].symb << " : " << symbol_table[i].ln << endl;
-	}
+	//for(int i = 0; i < symbol_table.size(); i++){
+	//	cout << symbol_table[i].symb << " : " << symbol_table[i].ln << endl;
+	//}
 
 
 

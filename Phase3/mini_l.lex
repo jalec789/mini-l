@@ -92,7 +92,7 @@ return			column = column + yyleng; return RETURN;
 
 
 	/*Identifiers only*/
-{LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*			{/*printf("IDENT %.*s\n", yyleng, yytext);*/ column = column + yyleng; yylval.id = yytext; return IDENT;}
+{LETTER}({LETTER}|{DIGIT}|{UNDERSCORE})*			{/*printf("IDENT %.*s\n", yyleng, yytext);*/ column = column + yyleng; yylval.id = strdup(yytext); return IDENT;}
 
 
 	/* More Errors */
