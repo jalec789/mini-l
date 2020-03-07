@@ -157,9 +157,9 @@ function_id: FUNCTION identifier {
 params: BEGIN_PARAMS declarations END_PARAMS {
 
 	//cout << "PARAMS^" << endl;
-	//for(int i = 0; i < scope_symbol_table.size(); i++) {
-	//	cout << "= " << scope_symbol_table[i] << ", $" << i << endl; 
-	//}
+	for(int i = 0; i < scope_symbol_table.size(); i++) {
+		cout << "= " << scope_symbol_table[i] << ", $" << i << endl; 
+	}
 
 	//paramIndex = scope_symbol_table.size(); //stackerId (changed)
 	//instruction_list.clear();
@@ -244,6 +244,7 @@ declarations: %empty {}
 		| declaration SEMICOLON declarations {
 	//CREATE VECTOR of VECTORS... new scope add to the stack
 	//...
+	//... just thought about this. Maybe keep this empty
 	
 };
 
