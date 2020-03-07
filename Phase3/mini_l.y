@@ -19,18 +19,18 @@
 	vector<string> functions_symbol_table;
 	vector<string> scope_symbol_table;	//clear after each function is done
 	//we may need one for numbers idk yet...
-	int paramIndex = 0;
+	int stackerId = 1;
 
 
 	//temporaries...
 	//newtemp vectors
-	vector<string> temp_var;
-	//newtemp functions
-	vector<string> temp_func;
-	//newlabel vectors
-	vector<string> label_var;
-	//newlabel functions
-	vector<string> label_func;
+//	vector<string> temp_var;
+//	//newtemp functions
+//	vector<string> temp_func;
+//	//newlabel vectors
+//	vector<string> label_var;
+//	//newlabel functions
+//	vector<string> label_func;
 
 
 	//interpreter string for each function
@@ -38,7 +38,23 @@
 	int listId = 0;	//for every line added to list for a function
 
 
-	//does a check before the push to make sure id is non existant
+////handles the exit within the function. should save overhead in the code. Also sometimes we want to check without pushing... wait that doesnt make sense (we shouldnt exit if we want to confirm a varible exists... okay dont make this yet, we'll still need it for the body to check if a varible exists or not)
+//	bool checkScope(string a) {
+//		if (find(scope_symbol_table.begin(), scope_symbol_table.end(), string(a)) != scope_symbol_table.end()) {
+//		//show error code that the identifier is already in use... and exit???
+//		//...
+//			cerr << "\n\nERROR somewhere. Current ID: " << a << endl;
+////			for(int i = 0; i < scope_symbol_table.size(); i++){
+////				cout << scope_symbol_table[i] << endl;
+////			}
+//			exit(0);
+//		}
+//		else {
+//			scope_symbol_table.push_back(a);
+//		}
+//	}
+
+// does a check before the push to make sure id is non-existant within the scope
 	void pushToScope(string a) {
 		if (find(scope_symbol_table.begin(), scope_symbol_table.end(), string(a)) != scope_symbol_table.end()) {
 		//show error code that the identifier is already in use... and exit???
@@ -109,7 +125,7 @@ function: function_id SEMICOLON	params locals body {
 	/* for(int i = 0; i < instruction_list.size(); i++) {
 		cout << instruction_list[i] << endl;
 	}*/
-	cout << "FUNCTION DONE" << endl << endl;
+	cout << "(FUNCTION DONE)" << endl << endl;
 
 	instruction_list.clear();
 	scope_symbol_table.clear();
@@ -140,13 +156,12 @@ function_id: FUNCTION identifier {
 
 params: BEGIN_PARAMS declarations END_PARAMS {
 
-	cout << "PARAMS" << endl;
-	for(int i = 0; i < scope_symbol_table.size(); i++) {
-		cout << ". " << scope_symbol_table[i] << endl;
-		cout << "= " << scope_symbol_table[i] << ", $" << i << endl; 
-	}
+	//cout << "PARAMS^" << endl;
+	//for(int i = 0; i < scope_symbol_table.size(); i++) {
+	//	cout << "= " << scope_symbol_table[i] << ", $" << i << endl; 
+	//}
 
-	paramIndex = scope_symbol_table.size();
+	//paramIndex = scope_symbol_table.size(); //stackerId (changed)
 	//instruction_list.clear();
 
 	//We might need to track declarations with a list idk...
@@ -157,16 +172,16 @@ params: BEGIN_PARAMS declarations END_PARAMS {
 
 locals: BEGIN_LOCALS declarations END_LOCALS {
 
-	cout << "LOCALS" << endl;
-	//This is the only reason we have int paramIndex defined gloablly...
-	for(int i = paramIndex; i < scope_symbol_table.size(); i++) {
-		cout << ". " << scope_symbol_table[i] << endl;
-	}
+	//cout << "LOCALS^" << endl;
+	//This is the only reason we have int stackerId defined gloablly...
+//	for(int i = stackerId; i < scope_symbol_table.size(); i++) {
+//		cout << ". " << scope_symbol_table[i] << endl;
+//	}
 
 };
 
 body: BEGIN_BODY statements END_BODY {
-	cout << "BODY" << endl;
+	cout << "(BODY HERE)" << endl;
 	/*for(int i = 0; i < instruction_list.size(); i++) {
 		cout << instruction_list[i] << endl;
 	}
@@ -196,6 +211,7 @@ identifiers: identifier	{
 }
 		| identifiers COMMA identifier {
 	pushToScope($3);
+	stackerId++;
 };
 
 
@@ -208,11 +224,20 @@ declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF
 	//instruction_list.push_back(".[] " + string($1) + ", " + to_string($5));
 	//cout << $1 << endl;
 	pushToScope($1);
+	for(int i = 0; i < stackerId; i++){
+		cout << ".[] " << scope_symbol_table[scope_symbol_table.size() - i - 1] << ", " << to_string($5) << endl;
+	}
+	stackerId = 1;
 }
 		| identifiers COLON INTEGER {
 	//instruction_list.push_back(". " + string($1));
 	//cout << $1 << endl;
 	pushToScope($1);
+	for(int i = 0; i < stackerId; i++) {
+		cout << ". " << scope_symbol_table[scope_symbol_table.size() - i - 1] << endl;
+	}
+	stackerId = 1;
+	
 };
 
 declarations: %empty {}
@@ -319,10 +344,10 @@ int main(int argc, char **argv) {
 
 
 	//just for debugging
-	cout << endl << endl << endl;
-	for(int i = 0; i < functions_symbol_table.size(); i++){
-		cout << functions_symbol_table[i] << endl;
-	}
+//	cout << endl << endl << endl;
+//	for(int i = 0; i < functions_symbol_table.size(); i++){
+//		cout << functions_symbol_table[i] << endl;
+//	}
 
 
 
