@@ -5,6 +5,7 @@
 	#include <string>
 	#include <stdio.h>
 	#include <stdlib.h>
+	#include <algorithm>
 	void yyerror(const char *MSG);
 	extern int line;
 	extern int column;
@@ -17,6 +18,8 @@
 
 	vector<string> functions_symbol_table;
 	vector<string> scope_symbol_table;	//clear after each function is done
+	//we may need one for numbers idk yet...
+	int paramIndex = 0;
 
 
 	//temporaries...
@@ -33,6 +36,23 @@
 	//interpreter string for each function
 	vector<string> instruction_list;
 	int listId = 0;	//for every line added to list for a function
+
+
+	//does a check before the push to make sure id is non existant
+	void pushToScope(string a) {
+		if (find(scope_symbol_table.begin(), scope_symbol_table.end(), string(a)) != scope_symbol_table.end()) {
+		//show error code that the identifier is already in use... and exit???
+		//...
+			cerr << "\n\nERROR somewhere. Current ID: " << a << endl;
+//			for(int i = 0; i < scope_symbol_table.size(); i++){
+//				cout << scope_symbol_table[i] << endl;
+//			}
+			exit(0);
+		}
+		else {
+			scope_symbol_table.push_back(a);
+		}
+	}
 
 %}
 
@@ -70,8 +90,6 @@ prog_start: %empty	{
 }
 		| function prog_start {
 	/*printf("prog_start -> function prog_start\n");*/
-	
-	//CREATE VECTOR of functions
 };
 
 /* function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY {
@@ -87,12 +105,12 @@ prog_start: %empty	{
 }; */
 
 
-// I might fo it this way. it'll be way more organized. need to replace function rule though...
-
 function: function_id SEMICOLON	params locals body {
-	for(int i = 0; i < instruction_list.size(); i++) {
+	/* for(int i = 0; i < instruction_list.size(); i++) {
 		cout << instruction_list[i] << endl;
-	}
+	}*/
+	cout << "FUNCTION DONE" << endl << endl;
+
 	instruction_list.clear();
 	scope_symbol_table.clear();
 };
@@ -105,16 +123,32 @@ function_id: FUNCTION identifier {
 
 	//instruction_list.push_back("func " + string($2));
 	cout << "func " + string($2) << endl;
-};//now we can separate the function id from the var id
+
+
+	if (find(functions_symbol_table.begin(), functions_symbol_table.end(), string($2)) != functions_symbol_table.end()) {
+		//show error code that the function identifier is already in use... and exit???
+		//...
+	}
+	else {
+		functions_symbol_table.push_back(string($2));
+	}
+
+	scope_symbol_table.clear();//the table should only contain the func id, remove it!!!
+
+};
+
 
 params: BEGIN_PARAMS declarations END_PARAMS {
 
 	cout << "PARAMS" << endl;
-	for(int i = 0; i < instruction_list.size(); i++) {
-		//cout << instruction_list[i] << endl;
-		//cout << "= " << "(varible)" << ", $" << i << endl; 
+	for(int i = 0; i < scope_symbol_table.size(); i++) {
+		cout << ". " << scope_symbol_table[i] << endl;
+		cout << "= " << scope_symbol_table[i] << ", $" << i << endl; 
 	}
-	instruction_list.clear();
+
+	paramIndex = scope_symbol_table.size();
+	//instruction_list.clear();
+
 	//We might need to track declarations with a list idk...
 
 	//Now we can print $0 here for param values...
@@ -124,10 +158,10 @@ params: BEGIN_PARAMS declarations END_PARAMS {
 locals: BEGIN_LOCALS declarations END_LOCALS {
 
 	cout << "LOCALS" << endl;
-	/*for(int i = 0; i < instruction_list.size(); i++) {
-		cout << instruction_list[i] << endl;
+	//This is the only reason we have int paramIndex defined gloablly...
+	for(int i = paramIndex; i < scope_symbol_table.size(); i++) {
+		cout << ". " << scope_symbol_table[i] << endl;
 	}
-	instruction_list.clear();*/
 
 };
 
@@ -156,11 +190,12 @@ identifiers: identifier	{
 	//vec.push_back($1);
 	//$$ = vec;
 	//cout << $1 << endl;
-	$$ = $1; //must be passed up tree since it can be integer ID or function ID
+	$$ = $1;
+	//$$.place = strdup($1.place); //must be passed up tree since it can be integer ID or function ID
 	
 }
 		| identifiers COMMA identifier {
-	instruction_list.push_back(". " + string($3));
+	pushToScope($3);
 };
 
 
@@ -170,12 +205,16 @@ number: NUMBER {
 
 
 declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF INTEGER {
-	instruction_list.push_back(".[] " + string($1) + ", " + to_string($5));
+	//instruction_list.push_back(".[] " + string($1) + ", " + to_string($5));
+	//cout << $1 << endl;
+	pushToScope($1);
 }
 		| identifiers COLON INTEGER {
-	instruction_list.push_back(". " + string($1));
-	//cout << ". " << $1 << endl;
+	//instruction_list.push_back(". " + string($1));
+	//cout << $1 << endl;
+	pushToScope($1);
 };
+
 declarations: %empty {}
 		| declaration SEMICOLON declarations {
 	//CREATE VECTOR of VECTORS... new scope add to the stack
@@ -279,9 +318,11 @@ int main(int argc, char **argv) {
 	yyparse(); // Calls yylex() for tokens.
 
 
-	//for(int i = 0; i < symbol_table.size(); i++){
-	//	cout << symbol_table[i].symb << " : " << symbol_table[i].ln << endl;
-	//}
+	//just for debugging
+	cout << endl << endl << endl;
+	for(int i = 0; i < functions_symbol_table.size(); i++){
+		cout << functions_symbol_table[i] << endl;
+	}
 
 
 
