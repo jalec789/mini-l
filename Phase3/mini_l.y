@@ -206,11 +206,14 @@ identifiers: identifier	{
 	//$$ = vec;
 	//cout << $1 << endl;
 	$$ = $1;
+	pushToScope($$);
+//	cout << $1 << endl;
 	//$$.place = strdup($1.place); //must be passed up tree since it can be integer ID or function ID
 	
 }
 		| identifiers COMMA identifier {
 	pushToScope($3);
+//	cout << $3 << endl;
 	stackerId++;
 };
 
@@ -223,18 +226,18 @@ number: NUMBER {
 declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF INTEGER {
 	//instruction_list.push_back(".[] " + string($1) + ", " + to_string($5));
 	//cout << $1 << endl;
-	pushToScope($1);
-	for(int i = 0; i < stackerId; i++){
-		cout << ".[] " << scope_symbol_table[scope_symbol_table.size() - i - 1] << ", " << to_string($5) << endl;
+	//pushToScope($1);
+	for(int i = scope_symbol_table.size() - stackerId; i < scope_symbol_table.size(); i++){
+		cout << ".[] " << scope_symbol_table[i] << ", " << to_string($5) << endl;
 	}
 	stackerId = 1;
 }
 		| identifiers COLON INTEGER {
 	//instruction_list.push_back(". " + string($1));
 	//cout << $1 << endl;
-	pushToScope($1);
-	for(int i = 0; i < stackerId; i++) {
-		cout << ". " << scope_symbol_table[scope_symbol_table.size() - i - 1] << endl;
+	//pushToScope($1);
+	for(int i = scope_symbol_table.size() - stackerId; i < scope_symbol_table.size(); i++) {
+		cout << ". " << scope_symbol_table[i] << endl;
 	}
 	stackerId = 1;
 	
