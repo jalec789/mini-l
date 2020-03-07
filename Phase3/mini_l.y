@@ -18,7 +18,7 @@
 
 	vector<string> functions_symbol_table;
 	vector<string> scope_symbol_table;	//clear after each function is done
-	//we may need one for numbers idk yet...
+	//we may need a vector table for numbers idk yet...
 	int stackCounter = 1;	//used for mulit-declaration, may use for stacks in statements
 
 
@@ -192,6 +192,7 @@ number: NUMBER {
 };
 
 
+
 declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF INTEGER {
 	//instruction_list.push_back(".[] " + string($1) + ", " + to_string($5));
 	//cout << $1 << endl;
@@ -219,6 +220,8 @@ declarations: %empty {}
 	//... just thought about this. Maybe keep this empty
 	
 };
+
+
 
 
 statements: statement SEMICOLON statements {}
@@ -298,7 +301,6 @@ vars: var {}
 ;
 var: identifier {}
 		| identifier L_SQUARE_BRACKET expression R_SQUARE_BRACKET {}
-
 ;
 
 
