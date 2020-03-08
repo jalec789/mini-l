@@ -98,7 +98,7 @@
 %token L_SQUARE_BRACKET R_SQUARE_BRACKET
 %token L_PAREN R_PAREN
 
-%type <id> identifier identifiers function
+%type <id> identifier identifiers function function_id
 %type <num> number
 
 
@@ -132,6 +132,9 @@ function_id: FUNCTION identifier {
 	if (find(functions_symbol_table.begin(), functions_symbol_table.end(), string($2)) != functions_symbol_table.end()) {
 		//show error code that the function identifier is already in use... and exit???
 		//...
+ 		char temp[128];
+    		snprintf(temp, 128, "Redeclaration of function %s", $2);
+    		yyerror(temp);
 	}
 	else {
 		functions_symbol_table.push_back(string($2));
