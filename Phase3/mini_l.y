@@ -38,9 +38,9 @@
 
 	//temporaries...
 	//newtemp vectors
-//	vector<string> temp_var;
-//	//newtemp functions
-//	vector<string> temp_func;
+	vector<string> temp_var;
+	//newtemp functions
+	vector<string> temp_func;
 //	//newlabel vectors
 //	vector<string> label_var;
 //	//newlabel functions
@@ -67,6 +67,12 @@
 //			scope_symbol_table.push_back(a);
 //		}
 //	}
+
+	//returns string and increments the tempcount no need to worry about it in the cout statment
+	string newTemp(){
+		temp_var.push_back("_temp_" + to_string(temp_count++));
+		return temp_var[temp_count - 1];
+	}
 
 
 //checks to see if a function id has been defined yet or not. will exit automatically if it is not found
@@ -280,7 +286,9 @@ statements: statement SEMICOLON statements {}
 
 
 statement: var ASSIGN expression {
-	//...
+	cout << ". " << newTemp() << endl;
+	cout << "= " << temp_var[temp_count - 1] << ", " << $3 << endl;
+	cout << "= " << $1 << ", " << temp_var[temp_count - 1] << endl;
 	instruction_vals.clear();
 }
 		| IF bool-expr THEN statements ENDIF {
@@ -365,7 +373,11 @@ comp: EQ {}
 		| GTE {}
 ;
 
-expressions: expression {}
+expressions: expression {
+	identifier a;
+	a.ident = to_string($1);
+	instruction_vals.push_back(a);
+}
 		| expression COMMA expressions {}
 ;
 
@@ -389,9 +401,14 @@ term: var {}
 		| SUB number %prec UMINUS {}
 		| SUB L_PAREN expression R_PAREN %prec UMINUS {/* new temp is solution */}
 		| identifier L_PAREN expressions R_PAREN {
-	//check if there exists this function_id
+	//check if there exists this function_id, this function call will exit if not
 	if (functionIdExists($1)) {
-		
+//		for(int i = 0; i < instruction_vals.size(); i++){
+//			cout << ". " << newTemp() << endl;
+//			cout << "= " << temp_var[temp_count - 1] << ", " << instruction_vals[i].ident << endl;
+//			cout << "param " << temp_var[temp_count - 1] << endl;
+//		}
+//		instruction_vals.clear();
 		//...
 	}
 }
@@ -431,16 +448,11 @@ int main(int argc, char **argv) {
 	}
 	yyparse(); // Calls yylex() for tokens.
 
-
 	//just for debugging
 //	cout << endl << endl << endl;
 //	for(int i = 0; i < functions_symbol_table.size(); i++){
 //		cout << functions_symbol_table[i] << endl;
 //	}
-
-
-
-
 	return 0;
 }
 
@@ -449,10 +461,17 @@ void yyerror(const char *MSG) {
 	printf("** Line %d, position %d: %s\n", line, column, MSG);
 	//printf("");
 	
-
-	//this did not work with strdup ???
 	//printf("Error at line %d, column %d: unrecognized symbol \"%.*s\"\n",line, column, yyleng, yytext);
 }
+
+
+
+
+
+
+
+
+
 
 
 
