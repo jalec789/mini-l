@@ -19,7 +19,21 @@
 	vector<string> functions_symbol_table;
 	vector<string> scope_symbol_table;	//clear after each function is done
 	//we may need a vector table for numbers idk yet...
-	int stackCounter = 1;	//used for mulit-declaration, may use for stacks in statements
+
+	//struct used for read and write in BODY, default to non-array varible
+	struct identifier {
+		string ident;
+		bool isArray = false;
+		int index = 0;
+	};
+
+	vector<identifier> instruction_vals;	//store var or temp values for a single instruction in body. This should clear after every instruction
+
+	int stackCounter = 1;	//used for mulit-declaration, may use for stacks in statements, used in PARAMS and LOCALS
+	int temp_count = 0;	//track and number the number of temporary varibles produced, used in BODY
+
+
+	int semicolonCount = 0;	//for debuggin purposes in BODY
 
 
 	//temporaries...
@@ -55,6 +69,18 @@
 //	}
 
 
+//checks to see if a function id has been defined yet or not. will exit automatically if it is not found
+	bool functionIdExists(string a) {
+		if  (find(functions_symbol_table.begin(), functions_symbol_table.end(), string(a)) != functions_symbol_table.end()){
+			return true;
+		}
+		else {
+			cerr << "\n\nError: no function of ID: " << a << "() was found" << endl;
+			exit(0);	//throw into strdup() line number
+		}
+	}
+
+
 
 
 // does a check before the push to make sure the id is non-existant within the current scope
@@ -62,7 +88,7 @@
 		if (find(scope_symbol_table.begin(), scope_symbol_table.end(), string(a)) != scope_symbol_table.end()) {
 		//show error code that the identifier is already in use... and exit???
 		//...
-			cerr << "\n\nError: somewhere there exists ID: " << a << endl;
+			cerr << "\n\nError: somewhere there already exists an ID: " << a << endl;
 			exit(0);	//throw into strdup() line number
 		}
 		else {
@@ -98,14 +124,15 @@
 %token L_SQUARE_BRACKET R_SQUARE_BRACKET
 %token L_PAREN R_PAREN
 
-%type <id> identifier identifiers function function_id
-%type <num> number
+	//anything that utilizes $$ should be a type
+%type <id> identifier identifiers var
+%type <num> number expression multiplicative-expr term
 
 
 
 %%
-prog_start: %empty	{/*cout << "prog_start -> epsilon\n";*/}
-		| function prog_start {/*printf("prog_start -> function prog_start\n");*/
+prog_start: %empty	{/*cout << "prog_start -> epsilon\n";*/ /* do we have an error here??? */}
+		| function prog_start {/*printf("prog_start -> function prog_start\n");*/ /* Also make sure to check the function symbol table look for the main function??? */
 };
 
 // function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY {};
@@ -135,6 +162,7 @@ function_id: FUNCTION identifier {
  		char temp[128];
     		snprintf(temp, 128, "Redeclaration of function %s", $2);
     		yyerror(temp);
+		exit(0);
 	}
 	else {
 		functions_symbol_table.push_back(string($2));
@@ -159,10 +187,11 @@ locals: BEGIN_LOCALS declarations END_LOCALS {
 //	for(int i = 0; i < scope_symbol_table.size(); i++){
 //		cout << scope_symbol_table[i] << endl;
 //	}
+	cout << "(BEGIN BODY)" << endl;
 };
 
 body: BEGIN_BODY statements END_BODY {
-	cout << "(BODY HERE)" << endl;
+	//cout << "(BODY HERE)" << endl;
 	/*for(int i = 0; i < instruction_list.size(); i++) {
 		cout << instruction_list[i] << endl;
 	}
@@ -174,9 +203,20 @@ body: BEGIN_BODY statements END_BODY {
 
 
 
+
+//---------------------- LOCAL & PARAM STUFF BELOW ---------------------------
+
+
+
+
+
+
+
+
+
 identifier: IDENT { 
 	//cout << $1 << endl;
-	$$ = $1;	//pushes id up the tree
+	$$ = $1;	//pushes id up the tree, this must remain simple!!!
 };
 
 identifiers: identifier	{
@@ -193,8 +233,6 @@ identifiers: identifier	{
 number: NUMBER {
 	$$ = $1;
 };
-
-
 
 declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF INTEGER {
 	//instruction_list.push_back(".[] " + string($1) + ", " + to_string($5));
@@ -227,19 +265,75 @@ declarations: %empty {}
 
 
 
+
+//-------------------------- BODY STUFF BELOW ---------------------------------
+
+
+
+
+
+
+
+	//can statments be empty???
 statements: statement SEMICOLON statements {}
-		| statement SEMICOLON {}
-;
-statement: var ASSIGN expression {}
-		| IF bool-expr THEN statements ENDIF {/* START TESTING HERE */}	
-		| IF bool-expr THEN statements ELSE statements ENDIF {}
-		| WHILE bool-expr BEGINLOOP statements ENDLOOP {}
-		| DO BEGINLOOP statements ENDLOOP WHILE bool-expr {}
-		| FOR var ASSIGN number SEMICOLON bool-expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP {}
-		| READ vars {}
-		| WRITE vars {}
-		| CONTINUE {}
-		| RETURN expression {}
+		| statement SEMICOLON {};
+
+
+statement: var ASSIGN expression {
+	//...
+	instruction_vals.clear();
+}
+		| IF bool-expr THEN statements ENDIF {
+	//...
+	instruction_vals.clear();
+}	
+		| IF bool-expr THEN statements ELSE statements ENDIF {
+	//...
+	instruction_vals.clear();
+}
+		| WHILE bool-expr BEGINLOOP statements ENDLOOP {
+	//...
+	instruction_vals.clear();
+}
+		| DO BEGINLOOP statements ENDLOOP WHILE bool-expr {
+	//...
+	instruction_vals.clear();
+}
+		| FOR var ASSIGN number SEMICOLON bool-expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP {
+	//...
+	instruction_vals.clear();
+}
+		| READ vars {
+	for(int i = 0; i < instruction_vals.size(); i++){
+		if(!instruction_vals[i].isArray){
+			cout << ".< " << instruction_vals[i].ident << endl;
+		}
+		else {
+			cout << ".[]< " << instruction_vals[i].ident << ", " << instruction_vals[i].index << endl;
+		}
+	}
+	instruction_vals.clear();
+}
+		| WRITE vars {
+	//this is not working correctly right now but I believe we need to complete assign and others for it to look correct
+	for(int i = 0; i < instruction_vals.size(); i++){
+		if(!instruction_vals[i].isArray){
+			cout << ".> " << instruction_vals[i].ident << endl;
+		}
+		else {
+			cout << ".[]> " << instruction_vals[i].ident << ", " << instruction_vals[i].index << endl;
+		}
+	}
+	instruction_vals.clear();
+}
+		| CONTINUE {
+	//...
+	instruction_vals.clear();
+}
+		| RETURN expression {
+	//...
+	instruction_vals.clear();
+}
 ;
 
 
@@ -275,36 +369,53 @@ expressions: expression {}
 		| expression COMMA expressions {}
 ;
 
-expression: multiplicative-expr {}
-		| multiplicative-expr ADD expression {}
-		| multiplicative-expr SUB expression {}
+expression: multiplicative-expr {/* new temp is solution */}
+		| multiplicative-expr ADD expression {/* new temp is solution */}
+		| multiplicative-expr SUB expression {/* new temp is solution */}
 ;
 
 
-multiplicative-expr: term {}
-		| term MULT multiplicative-expr {}
-		| term DIV multiplicative-expr {}
-		| term MOD multiplicative-expr {}
+multiplicative-expr: term {/* new temp is solution */}
+		| term MULT multiplicative-expr {/* new temp is solution */}
+		| term DIV multiplicative-expr {/* new temp is solution */}
+		| term MOD multiplicative-expr {/* new temp is solution */}
 ;
 
 	//remember that a function call is a term. should we add more rules???
 term: var {}
-		| number {}
-		| L_PAREN expression R_PAREN {}
+		| number {/* new temp is solution */}
+		| L_PAREN expression R_PAREN {/* new temp is solution */}
 		| SUB var %prec UMINUS {}
 		| SUB number %prec UMINUS {}
-		| SUB L_PAREN expression R_PAREN %prec UMINUS {}
-		| identifier L_PAREN expressions R_PAREN {}
+		| SUB L_PAREN expression R_PAREN %prec UMINUS {/* new temp is solution */}
+		| identifier L_PAREN expressions R_PAREN {
+	//check if there exists this function_id
+	if (functionIdExists($1)) {
+		
+		//...
+	}
+}
 		| identifier L_PAREN R_PAREN {}
 ;
 
 
 vars: var {}
-		|var COMMA vars {}
-;
-var: identifier {}
-		| identifier L_SQUARE_BRACKET expression R_SQUARE_BRACKET {}
-;
+		|var COMMA vars {};
+
+var: identifier {
+	//check to see if id exists, if not error and exit...
+	identifier a;
+	a.ident = $1;
+	instruction_vals.push_back(a);
+}
+		| identifier L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
+	//check to see if id exists, if not error and exit
+	identifier a;
+	a.ident = $1;
+	a.isArray = true;
+	a.index = $3;
+	instruction_vals.push_back(a);
+};
 
 
 
