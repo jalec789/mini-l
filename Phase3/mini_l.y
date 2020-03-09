@@ -2,6 +2,7 @@
 	//#include <*.h>
 	#include <iostream>
 	#include <vector>
+	#include <string.h>
 	#include <string>
 	#include <stdio.h>
 	#include <stdlib.h>
@@ -77,7 +78,9 @@
 	string newTemp(){
 		temp_var.push_back("_temp_" + to_string(temp_count++));
 		cout << ". " << temp_var[temp_var.size() - 1] << endl;
-		return temp_var[temp_var.size() - 1];
+		string newStr = temp_var[temp_var.size() - 1];
+		return newStr;
+//		return string("_temp_" + to_string(temp_count++));
 	}
 
 
@@ -115,6 +118,8 @@
 
 %}
 
+//%define api.value.type variant
+
 %union{
 	char* id;
 	int num;
@@ -124,8 +129,13 @@
 %start prog_start
 %token FUNCTION BEGIN_PARAMS END_PARAMS BEGIN_LOCALS END_LOCALS BEGIN_BODY END_BODY INTEGER ARRAY OF IF THEN ENDIF ELSE WHILE DO FOR BEGINLOOP ENDLOOP CONTINUE READ WRITE TRUE FALSE RETURN SEMICOLON COLON COMMA
 
+
+
 %token <id> IDENT
 %token <num> NUMBER
+
+//%token <std::string> IDENT
+//%token <int> NUMBER
 
 %left ASSIGN
 %left OR
@@ -216,7 +226,7 @@ body: BEGIN_BODY statements END_BODY {
 
 
 identifier: IDENT {
-printf("identifier -> IDENT %s\n", $1);
+//printf("identifier -> IDENT %s\n", $1);
 	//cout << $1 << endl;
 	$$ = $1;	//pushes id up the tree, this must remain simple!!!
 };
@@ -233,7 +243,7 @@ identifiers: identifier	{
 };
 
 number: NUMBER {
-printf("number -> NUMBER %d\n", $1);
+//printf("number -> NUMBER %d\n", $1);
 	$$ = $1;
 };
 
@@ -283,8 +293,8 @@ statements: statement SEMICOLON statements {}
 
 
 statement: var ASSIGN expression {
-printf("statement -> var ASSIGN expression\n");
-	//cout << "= " << $1 << ", " << $3 << endl;	//while it's graceful we need a way to determine between array or non-array identifer
+//printf("statement -> var ASSIGN expression\n");
+	//cout << "= " << $1 << ", " << $3 << endl;	//while it's graceful we need a way to determine between array or non-array identifer only for var. Dont worry about expression a temp value will be pushed up into expression
 	//...
 	
 //	if()
@@ -384,9 +394,9 @@ comp: EQ {}
 		| NEQ {}
 		| LT {}
 		| GT {}
-		| LTE { 
+		| LTE {
 //	string s = "<=";
-//	$$ = const_cast<char*>(s.c_str());
+//	$$ = strdup(s.c_str());
 }
 		| GTE {}
 ;
@@ -405,26 +415,35 @@ expressions: expression {
 
 expression: multiplicative-expr {
 	$$ = $1;
-	cout << "expression -> multiplicative-expr: " << $1 << endl;
+//    cout << "expression -> multiplicative-expr: " << $1 << endl;
 }
 		| multiplicative-expr ADD expression {
 //	string s1 = $1;
 //	string s2 = $3;
 //	//string t = newTemp();
 //	//cout << "\t+ " << ", " << s1 << ", " << s2 << endl;
-//	//$$ = const_cast<char*>(t.c_str());
+//	//$$ = strdup(t.c_str());
 }
 		| multiplicative-expr SUB expression {
 //printf("expression -> multiplicative-expr SUB expression \n");
-	cout << "expression -> multiplicative-expr SUB expression (" << $1 << ", " << $3 << ")" << endl;
-////	cout << $$ <<" :TEST 1: "<< $1 << endl;
+//cout << "expression -> multiplicative-expr SUB expression (" << $1 << ", " << $3 << ")" << endl;
+//	cout << $$ <<" :TEST 1: "<< $1 << endl;
 //	string s1 = $1;
+//	cout << "$1 = " << $1 << endl;
 //	string s2 = $3;
-//	string t = newTemp();
-////	cout << $$ << " :TEST 2: "<< $1 << endl;
-//	cout << "\t- " << t << ", " << s1 << ", " << s2 << endl;
-////	cout << "\t- " << t << ", " << $1 << ", " << $3 << endl;
-//	$$ = const_cast<char*>(t.c_str());
+//	cout << "temp_couny = " << temp_count << endl;
+	string t = newTemp();
+//		cout << "temp_couny = " << temp_count << endl;
+//		cout << "$1 = " << $1 << endl;
+//		printf("$1 = %s\n", $1);
+//	string t1 = newTemp();
+//		cout << "temp_couny = " << temp_count << endl;
+//		cout << "$1 = " << $1 << endl;
+//		printf("$1 = %s\n", $1);
+//	cout << $$ << " :TEST 2: "<< $1 << endl;
+	cout << "- " << t << ", " << $1 << ", " << $3 << endl;
+//	cout << "- " << t << ", " << $1 << ", " << $3 << endl;
+	$$ = strdup(t.c_str());	//BAD???
 	
 //	for(int i = 0; i < instruction_vals.size(); i++){
 //		cout << " : : : : " << instruction_vals[i].ident << endl;
@@ -437,7 +456,7 @@ expression: multiplicative-expr {
 multiplicative-expr: term {
 //printf("multiplicative-expr -> term\n");
 	$$ = $1;
-	cout << "multiplicative-expr -> term: " << $$ << endl;
+//cout << "multiplicative-expr -> term: " << $$ << endl;
 }
 		| term MULT multiplicative-expr {/* new temp is solution */}
 		| term DIV multiplicative-expr {/* new temp is solution */}
@@ -449,27 +468,27 @@ multiplicative-expr: term {
 term: var {
 	string t = newTemp();
 	cout << "= " << t << ", " << $1 << endl;
-	$$ = const_cast<char*>(t.c_str());
-	cout << "term -> var: " << $$ << endl;
+	$$ = strdup(t.c_str()); //BAD???
+//    cout << "term -> var: " << $$ << endl;
 	
 	//if this is array type we need a different print...??? arrays are overrated
 //	if(pushArray){
 //		string t = newTemp();
 //		cout << "=[] " << t << ", " << $1 << ", " << instruction_vals[instruction_vals.size() - 1].index << endl;
-//		$$ = const_cast<char*>(t.c_str());
+//		$$ = strdup(t.c_str());
 //		pushArray = false;
 //	}
 //	else {
 //		string t = newTemp();
 //		cout << "= " << t << ", " << $1 << endl;
-//		$$ = const_cast<char*>(t.c_str());
+//		$$ = strdup(t.c_str());
 //	}
 }
 		| number {
-printf("term -> number\n");
+//printf("term -> number\n");
 	string t = newTemp();
 	cout << "= " << t << ", " << to_string($1) << endl;
-	$$ = const_cast<char*>(t.c_str());
+	$$ = strdup(t.c_str());	//BAD???
 //	cout << "term -> number: " << $$ << endl;
 }
 		| L_PAREN expression R_PAREN {/* new temp is solution */}
@@ -488,7 +507,7 @@ printf("term -> number\n");
 	}
 	string t = newTemp();
 	cout << "call " << $1 << ", " << t << endl;
-	//$$ = const_cast<char*>(t.c_str());
+	$$ = strdup(t.c_str());
 }
 		| identifier L_PAREN R_PAREN {}
 ;
@@ -500,12 +519,12 @@ vars: var {/* leave blank... (it would be nice to populate vector here but we ca
 
 //These should populate a vector (to make array types work) AND if needed return the id
 var: identifier {
-printf("var -> identifier: %s\n",$1);
+//printf("var -> identifier: %s\n",$1);
 	//check to see if id exists, if not error and exit... also check if it is array type id or not...???
 	identifier a;
 	a.ident = $1;
 	instruction_vals.push_back(a);
-	$$ = $1;
+	//$$ = $1;
 }
 		| identifier L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
 	//check to see if id exists, if not error and exit... also check if it is array type id or not...???
@@ -515,7 +534,7 @@ printf("var -> identifier: %s\n",$1);
 	a.index = $3;
 	instruction_vals.push_back(a);
 	pushArray = true;//we know when to push an array type
-	//$$ = $1;
+	$$ = $1;
 };
 
 
