@@ -24,16 +24,21 @@
 	struct identifier {
 		string ident;
 		bool isArray = false;
-		int index = 0;
+		string index;
 	};
 
-	vector<identifier> instruction_vals;	//store var or temp values for a single instruction in body. This should clear after every instruction
+	vector<identifier> instruction_vals;	//store var: temp values for a single instruction in body. This should clear after every instruction. Used for plural READ and WRITE
+	vector<string> expression_vals;	//store expression: temp values for a single instruction in body. This should clear after every instruction. Used for plural parameters for a function in expressions
 
 	int stackCounter = 1;	//used for mulit-declaration, may use for stacks in statements, used in PARAMS and LOCALS
 	int temp_count = 0;	//track and number the number of temporary varibles produced, used in BODY // USE size() instead
+	//int lineNum = 0;// delete this later just for debugging???...
 
 
 	int semicolonCount = 0;	//for debuggin purposes in BODY
+	bool writeToArray = false;
+	bool readFromArray = false;
+	bool multiValue = false;//for multi value arguments to push we need to use a vecotr
 
 
 	//temporaries...
@@ -87,6 +92,8 @@
 		}
 	}
 
+
+//may need a function to check if identifier is of type array or non-array...???
 
 
 
@@ -275,29 +282,43 @@ statements: statement SEMICOLON statements {}
 
 statement: var ASSIGN expression {
 	//cout << "= " << $1 << ", " << $3 << endl;	//while it's graceful we need a way to determine between array or non-array identifer
+	//...
+	
+//	if()
+	
+	//reset and default
 	instruction_vals.clear();
+	expression_vals.clear();
+	writeToArray = false;
+	readFromArray = false;
 }
 		| IF bool-expr THEN statements ENDIF {
 	//...
 	instruction_vals.clear();
+	expression_vals.clear();
 }	
 		| IF bool-expr THEN statements ELSE statements ENDIF {
 	//...
 	instruction_vals.clear();
+	expression_vals.clear();
 }
 		| WHILE bool-expr BEGINLOOP statements ENDLOOP {
 	//...
 	instruction_vals.clear();
+	expression_vals.clear();
 }
 		| DO BEGINLOOP statements ENDLOOP WHILE bool-expr {
 	//...
 	instruction_vals.clear();
+	expression_vals.clear();
 }
 		| FOR var ASSIGN number SEMICOLON bool-expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP {
 	//...
 	instruction_vals.clear();
+	expression_vals.clear();
 }
 		| READ vars {
+	//...
 	for(int i = 0; i < instruction_vals.size(); i++){
 		if(!instruction_vals[i].isArray){
 			cout << ".< " << instruction_vals[i].ident << endl;
@@ -307,8 +328,10 @@ statement: var ASSIGN expression {
 		}
 	}
 	instruction_vals.clear();
+	expression_vals.clear();
 }
 		| WRITE vars {
+	//...
 	//this is not working correctly right now but I believe we need to complete assign and others for it to look correct
 	for(int i = 0; i < instruction_vals.size(); i++){
 		if(!instruction_vals[i].isArray){
@@ -319,14 +342,17 @@ statement: var ASSIGN expression {
 		}
 	}
 	instruction_vals.clear();
+	expression_vals.clear();
 }
 		| CONTINUE {
 	//...
 	instruction_vals.clear();
+	expression_vals.clear();
 }
 		| RETURN expression {
 	//...
 	instruction_vals.clear();
+	expression_vals.clear();
 }
 ;
 
@@ -359,11 +385,9 @@ comp: EQ {}
 		| GTE {}
 ;
 
-	//the only time plural expressions is used is during funciton parameters
+	//the only time plural expressions is used is during funciton parameters, this populate the expression array
 expressions: expression {
-	//identifier a;
-	//a.ident = to_string($1);
-	//instruction_vals.push_back(a);
+	expression_vals.push_back($1);
 }
 		| expression COMMA expressions {}
 ;
@@ -381,8 +405,16 @@ multiplicative-expr: term {/* new temp is solution */}
 ;
 
 	//remember that a function call is a term. should we add more rules???
-term: var {}
-		| number {/* new temp is solution */}
+term: var {
+	string t = newTemp();
+	cout << "= " << t << ", " << $1 << endl;
+	$$ = const_cast<char*>(t.c_str());
+}
+		| number {
+	string t = newTemp();
+	cout << "= " << t << ", " << to_string($1) << endl;
+	$$ = const_cast<char*>(t.c_str());
+}
 		| L_PAREN expression R_PAREN {/* new temp is solution */}
 		| SUB var %prec UMINUS {}
 		| SUB number %prec UMINUS {}
@@ -391,41 +423,37 @@ term: var {}
 	//check if there exists this function_id, this function call will exit if not
 	if (functionIdExists($1)) {
 		//start at 1 since index 0 will have the function id
-		for(int i = 1; i < instruction_vals.size(); i++){
-			string t1 = newTemp();
-			if(!instruction_vals[i].isArray){
-				cout << "= " << t1 << ", " << instruction_vals[i].ident << endl;
-			}
-			else{
-				cout << "= " << t1 << ", " << instruction_vals[i].ident << ", " << instruction_vals[i].index << endl;
-			}
-			cout << "param " << t1 << endl;
+		for(int i = 0; i < expression_vals.size(); i++){
+			cout << "param " << expression_vals[i] << endl;
 		}
 		instruction_vals.clear();
+		expression_vals.clear();
 	}
-	string t2 = newTemp();
-	cout << "call " << $1 << ", " << t2 << endl;
-	$$ = const_cast<char*>(t2.c_str());
+	string t = newTemp();
+	cout << "call " << $1 << ", " << t << endl;
+	//$$ = const_cast<char*>(t.c_str());
 }
 		| identifier L_PAREN R_PAREN {}
 ;
 
-//we'll have (var: identifier) handle purals with push_back()
+//we'll have (var: identifier) handle purals with push_back() - No can do here, it must be made in singular var. leave blank for now
 vars: var {}
 		|var COMMA vars {};
 
+
+//These should populate a vector (to make array types work) AND if needed return the id
 var: identifier {
-	//check to see if id exists, if not error and exit...
+	//check to see if id exists, if not error and exit... also check if it is array type id or not...???
 	identifier a;
 	a.ident = $1;
 	instruction_vals.push_back(a);
 }
 		| identifier L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
-	//check to see if id exists, if not error and exit
+	//check to see if id exists, if not error and exit... also check if it is array type id or not...???
 	identifier a;
 	a.ident = $1;
 	a.isArray = true;
-	//a.index = $3;
+	a.index = $3;
 	instruction_vals.push_back(a);
 };
 
