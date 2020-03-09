@@ -38,7 +38,7 @@
 	int semicolonCount = 0;	//for debuggin purposes in BODY
 	bool writeToArray = false;
 	bool readFromArray = false;
-	bool multiValue = false;//for multi value arguments to push we need to use a vecotr
+	bool pushArray=false;
 
 
 	//temporaries...
@@ -139,7 +139,7 @@
 %token L_PAREN R_PAREN
 
 	//anything that utilizes $$ should be a type
-%type <id> identifier identifiers expression multiplicative-expr term var
+%type <id> identifier identifiers expression multiplicative-expr term var comp
 %type <num> number 
 
 
@@ -215,7 +215,8 @@ body: BEGIN_BODY statements END_BODY {
 
 
 
-identifier: IDENT { 
+identifier: IDENT {
+printf("identifier -> IDENT %s\n", $1);
 	//cout << $1 << endl;
 	$$ = $1;	//pushes id up the tree, this must remain simple!!!
 };
@@ -232,7 +233,8 @@ identifiers: identifier	{
 };
 
 number: NUMBER {
-	//$$ = $1;
+printf("number -> NUMBER %d\n", $1);
+	$$ = $1;
 };
 
 declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF INTEGER {
@@ -281,6 +283,7 @@ statements: statement SEMICOLON statements {}
 
 
 statement: var ASSIGN expression {
+printf("statement -> var ASSIGN expression\n");
 	//cout << "= " << $1 << ", " << $3 << endl;	//while it's graceful we need a way to determine between array or non-array identifer
 	//...
 	
@@ -351,11 +354,10 @@ statement: var ASSIGN expression {
 }
 		| RETURN expression {
 	//...
+	cout << "RET END"<<endl;
 	instruction_vals.clear();
 	expression_vals.clear();
-}
-;
-
+};
 
 bool-expr: relation-and-expr {}
 		| relation-and-expr OR bool-expr {}
@@ -366,8 +368,9 @@ relation-and-expr: relation-expr {}
 		| relation-expr AND relation-and-expr {}
 ;
 
-
-relation-expr: expression comp expression {}
+relation-expr: expression comp expression {
+//	cout << $2 << " " << $1 << ", " << $3 << endl;
+}
 		| TRUE {}
 		| FALSE {}
 		| L_PAREN bool-expr R_PAREN {}
@@ -381,44 +384,98 @@ comp: EQ {}
 		| NEQ {}
 		| LT {}
 		| GT {}
-		| LTE {}
+		| LTE { 
+//	string s = "<=";
+//	$$ = const_cast<char*>(s.c_str());
+}
 		| GTE {}
 ;
+
+
+
+
+
 
 	//the only time plural expressions is used is during funciton parameters, this populate the expression array
 expressions: expression {
 	expression_vals.push_back($1);
 }
-		| expression COMMA expressions {}
+		| expression COMMA expressions {/* leave blank... */}
 ;
 
-expression: multiplicative-expr {/* new temp is solution */}
-		| multiplicative-expr ADD expression {/* new temp is solution */}
-		| multiplicative-expr SUB expression {/* new temp is solution */}
-;
+expression: multiplicative-expr {
+	$$ = $1;
+	cout << "expression -> multiplicative-expr: " << $1 << endl;
+}
+		| multiplicative-expr ADD expression {
+//	string s1 = $1;
+//	string s2 = $3;
+//	//string t = newTemp();
+//	//cout << "\t+ " << ", " << s1 << ", " << s2 << endl;
+//	//$$ = const_cast<char*>(t.c_str());
+}
+		| multiplicative-expr SUB expression {
+//printf("expression -> multiplicative-expr SUB expression \n");
+	cout << "expression -> multiplicative-expr SUB expression (" << $1 << ", " << $3 << ")" << endl;
+////	cout << $$ <<" :TEST 1: "<< $1 << endl;
+//	string s1 = $1;
+//	string s2 = $3;
+//	string t = newTemp();
+////	cout << $$ << " :TEST 2: "<< $1 << endl;
+//	cout << "\t- " << t << ", " << s1 << ", " << s2 << endl;
+////	cout << "\t- " << t << ", " << $1 << ", " << $3 << endl;
+//	$$ = const_cast<char*>(t.c_str());
+	
+//	for(int i = 0; i < instruction_vals.size(); i++){
+//		cout << " : : : : " << instruction_vals[i].ident << endl;
+//	}
+	
+//	cout << $$ <<" :TEST 3: "<< $1 << endl;
+};
 
 
-multiplicative-expr: term {/* new temp is solution */}
+multiplicative-expr: term {
+//printf("multiplicative-expr -> term\n");
+	$$ = $1;
+	cout << "multiplicative-expr -> term: " << $$ << endl;
+}
 		| term MULT multiplicative-expr {/* new temp is solution */}
 		| term DIV multiplicative-expr {/* new temp is solution */}
 		| term MOD multiplicative-expr {/* new temp is solution */}
 ;
 
 	//remember that a function call is a term. should we add more rules???
+	//term values should place into temps
 term: var {
 	string t = newTemp();
 	cout << "= " << t << ", " << $1 << endl;
 	$$ = const_cast<char*>(t.c_str());
+	cout << "term -> var: " << $$ << endl;
+	
+	//if this is array type we need a different print...??? arrays are overrated
+//	if(pushArray){
+//		string t = newTemp();
+//		cout << "=[] " << t << ", " << $1 << ", " << instruction_vals[instruction_vals.size() - 1].index << endl;
+//		$$ = const_cast<char*>(t.c_str());
+//		pushArray = false;
+//	}
+//	else {
+//		string t = newTemp();
+//		cout << "= " << t << ", " << $1 << endl;
+//		$$ = const_cast<char*>(t.c_str());
+//	}
 }
 		| number {
+printf("term -> number\n");
 	string t = newTemp();
 	cout << "= " << t << ", " << to_string($1) << endl;
 	$$ = const_cast<char*>(t.c_str());
+//	cout << "term -> number: " << $$ << endl;
 }
 		| L_PAREN expression R_PAREN {/* new temp is solution */}
 		| SUB var %prec UMINUS {}
 		| SUB number %prec UMINUS {}
-		| SUB L_PAREN expression R_PAREN %prec UMINUS {/* new temp is solution */}
+		| SUB L_PAREN expression R_PAREN %prec UMINUS {}
 		| identifier L_PAREN expressions R_PAREN {
 	//check if there exists this function_id, this function call will exit if not
 	if (functionIdExists($1)) {
@@ -437,16 +494,18 @@ term: var {
 ;
 
 //we'll have (var: identifier) handle purals with push_back() - No can do here, it must be made in singular var. leave blank for now
-vars: var {}
-		|var COMMA vars {};
+vars: var {/* leave blank... (it would be nice to populate vector here but we can't since we need to recieve 2 values of input for array type identifiers) */}
+		|var COMMA vars {/* leave blank... */};
 
 
 //These should populate a vector (to make array types work) AND if needed return the id
 var: identifier {
+printf("var -> identifier: %s\n",$1);
 	//check to see if id exists, if not error and exit... also check if it is array type id or not...???
 	identifier a;
 	a.ident = $1;
 	instruction_vals.push_back(a);
+	$$ = $1;
 }
 		| identifier L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
 	//check to see if id exists, if not error and exit... also check if it is array type id or not...???
@@ -455,9 +514,20 @@ var: identifier {
 	a.isArray = true;
 	a.index = $3;
 	instruction_vals.push_back(a);
+	pushArray = true;//we know when to push an array type
+	//$$ = $1;
 };
 
 
+
+
+
+
+
+//  **************************************************************
+//  ************************ E N D *******************************
+//  **************************************************************
+//  **************************************************************
 
 %%
 //USER CODE
