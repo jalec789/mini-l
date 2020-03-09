@@ -30,7 +30,7 @@
 	vector<identifier> instruction_vals;	//store var or temp values for a single instruction in body. This should clear after every instruction
 
 	int stackCounter = 1;	//used for mulit-declaration, may use for stacks in statements, used in PARAMS and LOCALS
-	int temp_count = 0;	//track and number the number of temporary varibles produced, used in BODY
+	int temp_count = 0;	//track and number the number of temporary varibles produced, used in BODY // USE size() instead
 
 
 	int semicolonCount = 0;	//for debuggin purposes in BODY
@@ -68,10 +68,11 @@
 //		}
 //	}
 
-	//returns string and increments the tempcount no need to worry about it in the cout statment
+	//returns string and increments the tempcount no need to worry about it in the cout statment, don't use temp count for indexing, use size() instead
 	string newTemp(){
 		temp_var.push_back("_temp_" + to_string(temp_count++));
-		return temp_var[temp_count - 1];
+		cout << ". " << temp_var[temp_var.size() - 1] << endl;
+		return temp_var[temp_var.size() - 1];
 	}
 
 
@@ -131,8 +132,8 @@
 %token L_PAREN R_PAREN
 
 	//anything that utilizes $$ should be a type
-%type <id> identifier identifiers var
-%type <num> number expression multiplicative-expr term
+%type <id> identifier identifiers expression multiplicative-expr term var
+%type <num> number 
 
 
 
@@ -144,9 +145,6 @@ prog_start: %empty	{/*cout << "prog_start -> epsilon\n";*/ /* do we have an erro
 // function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY {};
 
 function: function_id SEMICOLON	params locals body {
-	/* for(int i = 0; i < instruction_list.size(); i++) {
-		cout << instruction_list[i] << endl;
-	}*/
 	cout << "endfunc" << endl << endl;
 	//instruction_list.clear();
 	scope_symbol_table.clear();
@@ -154,17 +152,9 @@ function: function_id SEMICOLON	params locals body {
 
 function_id: FUNCTION identifier {
 	//we dont use this since this is the first one
-	/*for(int i = 0; i < instruction_list.size(); i++) {
-		cout << instruction_list[i] << endl;
-	}*/
-
-	//instruction_list.push_back("func " + string($2));
 	cout << "func " + string($2) << endl;
-
-
 	if (find(functions_symbol_table.begin(), functions_symbol_table.end(), string($2)) != functions_symbol_table.end()) {
 		//show error code that the function identifier is already in use... and exit???
-		//...
  		char temp[128];
     		snprintf(temp, 128, "Redeclaration of function %s", $2);
     		yyerror(temp);
@@ -173,9 +163,7 @@ function_id: FUNCTION identifier {
 	else {
 		functions_symbol_table.push_back(string($2));
 	}
-
 	scope_symbol_table.clear();//the table should only contain the func id, remove it!!!
-
 };
 
 
@@ -210,7 +198,7 @@ body: BEGIN_BODY statements END_BODY {
 
 
 
-//---------------------- LOCAL & PARAM STUFF BELOW ---------------------------
+//---------------- LOCAL & PARAM STUFF BELOW ---------------------------
 
 
 
@@ -237,7 +225,7 @@ identifiers: identifier	{
 };
 
 number: NUMBER {
-	$$ = $1;
+	//$$ = $1;
 };
 
 declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF INTEGER {
@@ -272,7 +260,7 @@ declarations: %empty {}
 
 
 
-//-------------------------- BODY STUFF BELOW ---------------------------------
+//------------------- BODY STUFF BELOW ---------------------------------
 
 
 
@@ -286,9 +274,7 @@ statements: statement SEMICOLON statements {}
 
 
 statement: var ASSIGN expression {
-	cout << ". " << newTemp() << endl;
-	cout << "= " << temp_var[temp_count - 1] << ", " << $3 << endl;
-	cout << "= " << $1 << ", " << temp_var[temp_count - 1] << endl;
+	//cout << "= " << $1 << ", " << $3 << endl;	//while it's graceful we need a way to determine between array or non-array identifer
 	instruction_vals.clear();
 }
 		| IF bool-expr THEN statements ENDIF {
@@ -373,10 +359,11 @@ comp: EQ {}
 		| GTE {}
 ;
 
+	//the only time plural expressions is used is during funciton parameters
 expressions: expression {
-	identifier a;
-	a.ident = to_string($1);
-	instruction_vals.push_back(a);
+	//identifier a;
+	//a.ident = to_string($1);
+	//instruction_vals.push_back(a);
 }
 		| expression COMMA expressions {}
 ;
@@ -403,19 +390,27 @@ term: var {}
 		| identifier L_PAREN expressions R_PAREN {
 	//check if there exists this function_id, this function call will exit if not
 	if (functionIdExists($1)) {
-//		for(int i = 0; i < instruction_vals.size(); i++){
-//			cout << ". " << newTemp() << endl;
-//			cout << "= " << temp_var[temp_count - 1] << ", " << instruction_vals[i].ident << endl;
-//			cout << "param " << temp_var[temp_count - 1] << endl;
-//		}
-//		instruction_vals.clear();
-		//...
+		//start at 1 since index 0 will have the function id
+		for(int i = 1; i < instruction_vals.size(); i++){
+			string t1 = newTemp();
+			if(!instruction_vals[i].isArray){
+				cout << "= " << t1 << ", " << instruction_vals[i].ident << endl;
+			}
+			else{
+				cout << "= " << t1 << ", " << instruction_vals[i].ident << ", " << instruction_vals[i].index << endl;
+			}
+			cout << "param " << t1 << endl;
+		}
+		instruction_vals.clear();
 	}
+	string t2 = newTemp();
+	cout << "call " << $1 << ", " << t2 << endl;
+	$$ = const_cast<char*>(t2.c_str());
 }
 		| identifier L_PAREN R_PAREN {}
 ;
 
-
+//we'll have (var: identifier) handle purals with push_back()
 vars: var {}
 		|var COMMA vars {};
 
@@ -430,7 +425,7 @@ var: identifier {
 	identifier a;
 	a.ident = $1;
 	a.isArray = true;
-	a.index = $3;
+	//a.index = $3;
 	instruction_vals.push_back(a);
 };
 
