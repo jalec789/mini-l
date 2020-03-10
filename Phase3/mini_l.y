@@ -149,7 +149,7 @@
 %token L_PAREN R_PAREN
 
 	//anything that utilizes $$ should be a type
-%type <id> identifier identifiers expression multiplicative-expr term var comp
+%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr
 %type <num> number 
 
 
@@ -172,10 +172,10 @@ function_id: FUNCTION identifier {
 	cout << "func " + string($2) << endl;
 	if (find(functions_symbol_table.begin(), functions_symbol_table.end(), string($2)) != functions_symbol_table.end()) {
 		//show error code that the function identifier is already in use... and exit???
- 		char temp[128];
+ 			char temp[128];
     		snprintf(temp, 128, "Redeclaration of function %s", $2);
     		yyerror(temp);
-		exit(0);
+			exit(0);
 	}
 	else {
 		functions_symbol_table.push_back(string($2));
@@ -380,25 +380,54 @@ relation-and-expr: relation-expr {}
 
 relation-expr: expression comp expression {
 //	cout << $2 << " " << $1 << ", " << $3 << endl;
+	string t = newTemp();
+	cout << $2 << " " << t << ", " << $1 << ", " << $3 << endl;
+	$$ = strdup(t.c_str());
 }
-		| TRUE {}
-		| FALSE {}
-		| L_PAREN bool-expr R_PAREN {}
+		| TRUE {
+		    //cout << "Hello from beginning" << endl;
+			string temp = "1";
+			//cout << "Hello from middle, this is temp: " << temp << endl;
+			$$ = strdup(temp.c_str());
+			//cout << "Hello from true" << endl;
+		}
+		| FALSE {
+			string temp = "0";
+			$$ = strdup(temp.c_str());
+		}
+		| L_PAREN bool-expr R_PAREN {
+			// $$ = strdup($2);   //Unsure of this one for now... 
+		}
 		| NOT expression comp expression {}
 		| NOT TRUE {}
 		| NOT FALSE {}
 		| NOT L_PAREN bool-expr R_PAREN {}
 ;
 
-comp: EQ {}
-		| NEQ {}
-		| LT {}
-		| GT {}
-		| LTE {
-//	string s = "<=";
-//	$$ = strdup(s.c_str());
+comp: EQ {
+		string t = "=";
+		$$ = strdup(t.c_str());
 }
-		| GTE {}
+		| NEQ {
+			string t = "!=";
+			$$ = strdup(t.c_str());
+		}
+		| LT {
+			string t = "<";
+			$$ = strdup(t.c_str());
+		}
+		| GT {
+			string t = ">";
+			$$ = strdup(t.c_str());
+		}
+		| LTE {
+			string t = "<=";
+			$$ = strdup(t.c_str());
+		}
+		| GTE {
+			string t = ">=";
+			$$ = strdup(t.c_str());
+		}
 ;
 
 
