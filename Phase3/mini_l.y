@@ -47,7 +47,7 @@
 	vector<string> temp_var;
 	//newtemp functions
 	vector<string> temp_func;
-//	//newlabel vectors
+	//newlabel vectors
 //	vector<string> label_var;
 //	//newlabel functions
 //	vector<string> label_func;
@@ -76,9 +76,9 @@
 
 	//returns string and increments the tempcount no need to worry about it in the cout statment, don't use temp count for indexing, use size() instead
 	string newTemp(){
-		temp_var.push_back("_temp_" + to_string(temp_count++));
-		cout << ". " << temp_var[temp_var.size() - 1] << endl;
-		string newStr = temp_var[temp_var.size() - 1];
+		string newStr = "_temp_" + to_string(temp_count++);
+		temp_var.push_back(newStr);
+		cout << ". " << newStr << endl;
 		return newStr;
 //		return string("_temp_" + to_string(temp_count++));
 	}
@@ -172,10 +172,10 @@ function_id: FUNCTION identifier {
 	cout << "func " + string($2) << endl;
 	if (find(functions_symbol_table.begin(), functions_symbol_table.end(), string($2)) != functions_symbol_table.end()) {
 		//show error code that the function identifier is already in use... and exit???
- 			char temp[128];
-    		snprintf(temp, 128, "Redeclaration of function %s", $2);
-    		yyerror(temp);
-			exit(0);
+ 		char temp[128];
+ 		snprintf(temp, 128, "Redeclaration of function %s", $2);
+		yyerror(temp);
+		exit(0);
 	}
 	else {
 		functions_symbol_table.push_back(string($2));
@@ -198,7 +198,7 @@ locals: BEGIN_LOCALS declarations END_LOCALS {
 //	for(int i = 0; i < scope_symbol_table.size(); i++){
 //		cout << scope_symbol_table[i] << endl;
 //	}
-	cout << "(BEGIN BODY)" << endl;
+	//cout << "(BEGIN BODY)" << endl;
 };
 
 body: BEGIN_BODY statements END_BODY {
@@ -293,6 +293,7 @@ statements: statement SEMICOLON statements {}
 
 
 statement: var ASSIGN expression {
+	cout << "= " << $1 << ", " << $3 << endl;
 //printf("statement -> var ASSIGN expression\n");
 	//cout << "= " << $1 << ", " << $3 << endl;	//while it's graceful we need a way to determine between array or non-array identifer only for var. Dont worry about expression a temp value will be pushed up into expression
 	//...
@@ -306,6 +307,7 @@ statement: var ASSIGN expression {
 	readFromArray = false;
 }
 		| IF bool-expr THEN statements ENDIF {
+	
 	//...
 	instruction_vals.clear();
 	expression_vals.clear();
@@ -316,6 +318,7 @@ statement: var ASSIGN expression {
 	expression_vals.clear();
 }
 		| WHILE bool-expr BEGINLOOP statements ENDLOOP {
+	cout << "loop here\n";
 	//...
 	instruction_vals.clear();
 	expression_vals.clear();
@@ -364,10 +367,12 @@ statement: var ASSIGN expression {
 }
 		| RETURN expression {
 	//...
-	cout << "RET END"<<endl;
+//cout << "RET END"<<endl;
 	instruction_vals.clear();
 	expression_vals.clear();
 };
+
+
 
 bool-expr: relation-and-expr {}
 		| relation-and-expr OR bool-expr {}
@@ -378,6 +383,8 @@ relation-and-expr: relation-expr {}
 		| relation-expr AND relation-and-expr {}
 ;
 
+
+
 relation-expr: expression comp expression {
 //	cout << $2 << " " << $1 << ", " << $3 << endl;
 	string t = newTemp();
@@ -385,19 +392,19 @@ relation-expr: expression comp expression {
 	$$ = strdup(t.c_str());
 }
 		| TRUE {
-		    //cout << "Hello from beginning" << endl;
-			string temp = "1";
-			//cout << "Hello from middle, this is temp: " << temp << endl;
-			$$ = strdup(temp.c_str());
-			//cout << "Hello from true" << endl;
-		}
+	//cout << "Hello from beginning" << endl;
+	string temp = "1";
+	//cout << "Hello from middle, this is temp: " << temp << endl;
+	$$ = strdup(temp.c_str());
+	//cout << "Hello from true" << endl;
+}
 		| FALSE {
-			string temp = "0";
-			$$ = strdup(temp.c_str());
-		}
+	string temp = "0";
+	$$ = strdup(temp.c_str());
+}
 		| L_PAREN bool-expr R_PAREN {
-			// $$ = strdup($2);   //Unsure of this one for now... 
-		}
+	// $$ = strdup($2);   //Unsure of this one for now... 
+}
 		| NOT expression comp expression {}
 		| NOT TRUE {}
 		| NOT FALSE {}
@@ -405,33 +412,29 @@ relation-expr: expression comp expression {
 ;
 
 comp: EQ {
-		string t = "=";
-		$$ = strdup(t.c_str());
+	string t = "=";
+	$$ = strdup(t.c_str());
 }
 		| NEQ {
-			string t = "!=";
-			$$ = strdup(t.c_str());
-		}
+	string t = "!=";
+	$$ = strdup(t.c_str());
+}
 		| LT {
-			string t = "<";
-			$$ = strdup(t.c_str());
-		}
+	string t = "<";
+	$$ = strdup(t.c_str());
+}
 		| GT {
-			string t = ">";
-			$$ = strdup(t.c_str());
-		}
+	string t = ">";
+	$$ = strdup(t.c_str());
+}
 		| LTE {
-			string t = "<=";
-			$$ = strdup(t.c_str());
-		}
+	string t = "<=";
+	$$ = strdup(t.c_str());
+}
 		| GTE {
-			string t = ">=";
-			$$ = strdup(t.c_str());
-		}
-;
-
-
-
+	string t = ">=";
+	$$ = strdup(t.c_str());
+};
 
 
 
@@ -444,52 +447,37 @@ expressions: expression {
 
 expression: multiplicative-expr {
 	$$ = $1;
-//    cout << "expression -> multiplicative-expr: " << $1 << endl;
 }
 		| multiplicative-expr ADD expression {
-//	string s1 = $1;
-//	string s2 = $3;
-//	//string t = newTemp();
-//	//cout << "\t+ " << ", " << s1 << ", " << s2 << endl;
-//	//$$ = strdup(t.c_str());
+	string t = newTemp();
+	cout << "+ " << t << ", " << $1 << ", " << $3 << endl;
+	$$ = strdup(t.c_str());
 }
 		| multiplicative-expr SUB expression {
-//printf("expression -> multiplicative-expr SUB expression \n");
-//cout << "expression -> multiplicative-expr SUB expression (" << $1 << ", " << $3 << ")" << endl;
-//	cout << $$ <<" :TEST 1: "<< $1 << endl;
-//	string s1 = $1;
-//	cout << "$1 = " << $1 << endl;
-//	string s2 = $3;
-//	cout << "temp_couny = " << temp_count << endl;
 	string t = newTemp();
-//		cout << "temp_couny = " << temp_count << endl;
-//		cout << "$1 = " << $1 << endl;
-//		printf("$1 = %s\n", $1);
-//	string t1 = newTemp();
-//		cout << "temp_couny = " << temp_count << endl;
-//		cout << "$1 = " << $1 << endl;
-//		printf("$1 = %s\n", $1);
-//	cout << $$ << " :TEST 2: "<< $1 << endl;
 	cout << "- " << t << ", " << $1 << ", " << $3 << endl;
-//	cout << "- " << t << ", " << $1 << ", " << $3 << endl;
-	$$ = strdup(t.c_str());	//BAD???
-	
-//	for(int i = 0; i < instruction_vals.size(); i++){
-//		cout << " : : : : " << instruction_vals[i].ident << endl;
-//	}
-	
-//	cout << $$ <<" :TEST 3: "<< $1 << endl;
+	$$ = strdup(t.c_str());
 };
 
 
 multiplicative-expr: term {
-//printf("multiplicative-expr -> term\n");
 	$$ = $1;
-//cout << "multiplicative-expr -> term: " << $$ << endl;
 }
-		| term MULT multiplicative-expr {/* new temp is solution */}
-		| term DIV multiplicative-expr {/* new temp is solution */}
-		| term MOD multiplicative-expr {/* new temp is solution */}
+		| term MULT multiplicative-expr {
+	string t = newTemp();
+	cout << "* " << t << ", " << $1 << ", " << $3 << endl;
+	$$ = strdup(t.c_str());
+}
+		| term DIV multiplicative-expr {
+	string t = newTemp();
+	cout << "/ " << t << ", " << $1 << ", " << $3 << endl;
+	$$ = strdup(t.c_str());
+}
+		| term MOD multiplicative-expr {
+	string t = newTemp();
+	cout << "% " << t << ", " << $1 << ", " << $3 << endl;
+	$$ = strdup(t.c_str());
+}
 ;
 
 	//remember that a function call is a term. should we add more rules???
@@ -497,8 +485,8 @@ multiplicative-expr: term {
 term: var {
 	string t = newTemp();
 	cout << "= " << t << ", " << $1 << endl;
-	$$ = strdup(t.c_str()); //BAD???
-//    cout << "term -> var: " << $$ << endl;
+	$$ = strdup(t.c_str());
+//cout << "term -> var: " << $$ << endl;
 	
 	//if this is array type we need a different print...??? arrays are overrated
 //	if(pushArray){
@@ -514,15 +502,18 @@ term: var {
 //	}
 }
 		| number {
-//printf("term -> number\n");
 	string t = newTemp();
 	cout << "= " << t << ", " << to_string($1) << endl;
-	$$ = strdup(t.c_str());	//BAD???
+	$$ = strdup(t.c_str());
 //	cout << "term -> number: " << $$ << endl;
 }
-		| L_PAREN expression R_PAREN {/* new temp is solution */}
+		| L_PAREN expression R_PAREN {/* Leave Blank??? */}
 		| SUB var %prec UMINUS {}
-		| SUB number %prec UMINUS {}
+		| SUB number %prec UMINUS {
+//	string t = newTemp();
+//	cout << "= " << t << ", -" << to_string($2) << endl;//how do we post negative values???
+//	$$ = strdup(t.c_str());
+}
 		| SUB L_PAREN expression R_PAREN %prec UMINUS {}
 		| identifier L_PAREN expressions R_PAREN {
 	//check if there exists this function_id, this function call will exit if not
@@ -553,7 +544,7 @@ var: identifier {
 	identifier a;
 	a.ident = $1;
 	instruction_vals.push_back(a);
-	//$$ = $1;
+	$$ = $1;
 }
 		| identifier L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
 	//check to see if id exists, if not error and exit... also check if it is array type id or not...???
