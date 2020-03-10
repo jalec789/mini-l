@@ -172,10 +172,10 @@ function_id: FUNCTION identifier {
 	cout << "func " + string($2) << endl;
 	if (find(functions_symbol_table.begin(), functions_symbol_table.end(), string($2)) != functions_symbol_table.end()) {
 		//show error code that the function identifier is already in use... and exit???
- 		char temp[128];
+ 			char temp[128];
     		snprintf(temp, 128, "Redeclaration of function %s", $2);
     		yyerror(temp);
-		exit(0);
+			exit(0);
 	}
 	else {
 		functions_symbol_table.push_back(string($2));
@@ -380,8 +380,14 @@ relation-and-expr: relation-expr {}
 
 relation-expr: expression comp expression {
 //	cout << $2 << " " << $1 << ", " << $3 << endl;
+	string t = newTemp();
+	cout << $2 << " " << t << ", " << $1 << ", " << $3 << endl;
+	$$ = strup(t.c_str());
 }
-		| TRUE {}
+		| TRUE {
+			string temp = "1\n";
+			$$ = strdup(temp);
+		}
 		| FALSE {}
 		| L_PAREN bool-expr R_PAREN {}
 		| NOT expression comp expression {}
@@ -390,15 +396,30 @@ relation-expr: expression comp expression {
 		| NOT L_PAREN bool-expr R_PAREN {}
 ;
 
-comp: EQ {}
-		| NEQ {}
-		| LT {}
-		| GT {}
-		| LTE {
-//	string s = "<=";
-//	$$ = strdup(s.c_str());
+comp: EQ {
+		string t = "=";
+		$$ = strdup(t.c_str());
 }
-		| GTE {}
+		| NEQ {
+			string t = "!=";
+			$$ = strdup(t.c_str());
+		}
+		| LT {
+			string t = "<";
+			$$ = strdup(t.c_str());
+		}
+		| GT {
+			string t = ">";
+			$$ = strdup(t.c_str());
+		}
+		| LTE {
+			string t = "<=";
+			$$ = strdup(s.c_str());
+		}
+		| GTE {
+			string t = ">=";
+			$$ = strdup(s.c_str());
+		}
 ;
 
 
