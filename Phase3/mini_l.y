@@ -172,8 +172,8 @@ function_id: FUNCTION identifier {
 	cout << "func " + string($2) << endl;
 	if (find(functions_symbol_table.begin(), functions_symbol_table.end(), string($2)) != functions_symbol_table.end()) {
 		//show error code that the function identifier is already in use... and exit???
- 		char temp[128];
- 		snprintf(temp, 128, "Redeclaration of function %s", $2);
+		char temp[128];
+		snprintf(temp, 128, "Redeclaration of function %s", $2);
 		yyerror(temp);
 		exit(0);
 	}
@@ -293,12 +293,22 @@ statements: statement SEMICOLON statements {}
 
 
 statement: var ASSIGN expression {
-	cout << "= " << $1 << ", " << $3 << endl;
+
+	//instruction_vals should really only be used for multiple things like vars and expressions but I'll use it here... idk
+	if(instruction_vals[0].isArray) {
+		cout << "[]= " << instruction_vals[0].ident << ", " << instruction_vals[0].index << ", " << $3 << endl;
+	}
+	else {
+		cout << "= " << $1 << ", " << $3 << endl;
+	}
+//	cout << pushArray << "start\n";
+//	for(int i = 0; i < instruction_vals.size(); i++) {
+//		cout << "THIS: " << instruction_vals[i].ident << endl;
+//	}
+//	cout << "end\n";
+	
 //printf("statement -> var ASSIGN expression\n");
 	//cout << "= " << $1 << ", " << $3 << endl;	//while it's graceful we need a way to determine between array or non-array identifer only for var. Dont worry about expression a temp value will be pushed up into expression
-	//...
-	
-//	if()
 	
 	//reset and default
 	instruction_vals.clear();
@@ -329,6 +339,7 @@ statement: var ASSIGN expression {
 	expression_vals.clear();
 }
 		| FOR var ASSIGN number SEMICOLON bool-expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP {
+	//WORRY about the var here: determine if id is array or non-array type
 	//...
 	instruction_vals.clear();
 	expression_vals.clear();
@@ -483,9 +494,19 @@ multiplicative-expr: term {
 	//remember that a function call is a term. should we add more rules???
 	//term values should place into temps
 term: var {
+
 	string t = newTemp();
-	cout << "= " << t << ", " << $1 << endl;
+	identifier a = instruction_vals[instruction_vals.size() - 1];
+	//we could have just used instruction_vals.(top).isArray right???
+	if(pushArray){
+		cout << "=[] " << t << ", " << a.ident << ", " << a.index << endl;
+	}
+	else {
+		cout << "= " << t << ", " << $1 << endl;
+	}
 	$$ = strdup(t.c_str());
+	pushArray = false;
+	
 //cout << "term -> var: " << $$ << endl;
 	
 	//if this is array type we need a different print...??? arrays are overrated
@@ -540,20 +561,20 @@ vars: var {/* leave blank... (it would be nice to populate vector here but we ca
 //These should populate a vector (to make array types work) AND if needed return the id
 var: identifier {
 //printf("var -> identifier: %s\n",$1);
-	//check to see if id exists, if not error and exit... also check if it is array type id or not...???
+	//check to see if id exists AND is NOT array type, if not error and exit...???
 	identifier a;
 	a.ident = $1;
 	instruction_vals.push_back(a);
 	$$ = $1;
 }
 		| identifier L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
-	//check to see if id exists, if not error and exit... also check if it is array type id or not...???
+	//check to see if id exists AND IS array type, if not error and exit...???
 	identifier a;
 	a.ident = $1;
 	a.isArray = true;
 	a.index = $3;
 	instruction_vals.push_back(a);
-	pushArray = true;//we know when to push an array type
+	pushArray = true;	//we know when to push an array type, only used if we have a array type on the right hand side of a statement
 	$$ = $1;
 };
 
