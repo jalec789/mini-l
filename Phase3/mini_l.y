@@ -149,7 +149,7 @@
 %token L_PAREN R_PAREN
 
 	//anything that utilizes $$ should be a type
-%type <id> identifier identifiers expression multiplicative-expr term var comp
+%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr
 %type <num> number 
 
 
@@ -382,13 +382,19 @@ relation-expr: expression comp expression {
 //	cout << $2 << " " << $1 << ", " << $3 << endl;
 	string t = newTemp();
 	cout << $2 << " " << t << ", " << $1 << ", " << $3 << endl;
-	$$ = strup(t.c_str());
+	$$ = strdup(t.c_str());
 }
 		| TRUE {
-			string temp = "1\n";
-			$$ = strdup(temp);
+		    //cout << "Hello from beginning" << endl;
+			string temp = "1";
+			//cout << "Hello from middle, this is temp: " << temp << endl;
+			$$ = strdup(temp.c_str());
+			..cout << "Hello from true" << endl;
 		}
-		| FALSE {}
+		| FALSE {
+			string temp = "0";
+			$$ = strdup(temp.c_str());
+		}
 		| L_PAREN bool-expr R_PAREN {}
 		| NOT expression comp expression {}
 		| NOT TRUE {}
@@ -414,11 +420,11 @@ comp: EQ {
 		}
 		| LTE {
 			string t = "<=";
-			$$ = strdup(s.c_str());
+			$$ = strdup(t.c_str());
 		}
 		| GTE {
 			string t = ">=";
-			$$ = strdup(s.c_str());
+			$$ = strdup(t.c_str());
 		}
 ;
 
