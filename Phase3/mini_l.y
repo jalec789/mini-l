@@ -389,13 +389,15 @@ relation-expr: expression comp expression {
 			string temp = "1";
 			//cout << "Hello from middle, this is temp: " << temp << endl;
 			$$ = strdup(temp.c_str());
-			..cout << "Hello from true" << endl;
+			//cout << "Hello from true" << endl;
 		}
 		| FALSE {
 			string temp = "0";
 			$$ = strdup(temp.c_str());
 		}
-		| L_PAREN bool-expr R_PAREN {}
+		| L_PAREN bool-expr R_PAREN {
+			// $$ = strdup($2);   //Unsure of this one for now... 
+		}
 		| NOT expression comp expression {}
 		| NOT TRUE {}
 		| NOT FALSE {}
