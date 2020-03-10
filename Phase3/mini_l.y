@@ -16,17 +16,19 @@
 	extern int yylex(void);
 
 	using namespace std;
-
-	vector<string> functions_symbol_table;
-	vector<string> scope_symbol_table;	//clear after each function is done
-	//we may need a vector table for numbers idk yet...
-
+	
 	//struct used for read and write in BODY, default to non-array varible
 	struct identifier {
 		string ident;
 		bool isArray = false;
 		string index;
 	};
+	
+	vector<string> functions_symbol_table;
+
+	//used to be scope_symbol_table here
+	vector<identifier> sc_symbol_table;	//clear after each function is done
+	//we may need a vector table for numbers idk yet...
 
 	vector<identifier> instruction_vals;	//store var: temp values for a single instruction in body. This should clear after every instruction. Used for plural READ and WRITE
 	vector<string> expression_vals;	//store expression: temp values for a single instruction in body. This should clear after every instruction. Used for plural parameters for a function in expressions
@@ -74,6 +76,22 @@
 //		}
 //	}
 
+
+	//takes a string and checks sc_symbol_table for the index and returns identifier
+	// IF in scope return: index int
+	// IF not in scope exit(0) the program
+	int indexOf(string s) {
+		for(int i = 0; i < sc_symbol_table.size(); i++) {
+			if(s == sc_symbol_table[i].ident) {
+				return i;
+			}
+		}
+		//Need error line here...???
+		exit(0);
+	}
+
+
+
 	//returns string and increments the tempcount no need to worry about it in the cout statment, don't use temp count for indexing, use size() instead
 	string newTemp(){
 		string newStr = "_temp_" + to_string(temp_count++);
@@ -101,16 +119,15 @@
 
 
 // does a check before the push to make sure the id is non-existant within the current scope
-	void pushToScope(string a) {
-		if (find(scope_symbol_table.begin(), scope_symbol_table.end(), string(a)) != scope_symbol_table.end()) {
-		//show error code that the identifier is already in use... and exit???
-		//...
-			cerr << "\n\nError: somewhere there already exists an ID: " << a << endl;
-			exit(0);	//throw into strdup() line number
+	void pushToScope(identifier a) {
+		for(int i = 0; i < sc_symbol_table.size(); i++) {
+			if(a.ident == sc_symbol_table[i].ident){
+				cerr << "\n\nError: somewhere there already exists an ID: " << a.ident << endl;
+				exit(0);	//throw into strdup() line number
+			}
 		}
-		else {
-			scope_symbol_table.push_back(a);
-		}
+
+		sc_symbol_table.push_back(a);
 	}
 
 
@@ -164,7 +181,7 @@ prog_start: %empty	{/*cout << "prog_start -> epsilon\n";*/ /* do we have an erro
 function: function_id SEMICOLON	params locals body {
 	cout << "endfunc" << endl << endl;
 	//instruction_list.clear();
-	scope_symbol_table.clear();
+	sc_symbol_table.clear();
 };
 
 function_id: FUNCTION identifier {
@@ -180,14 +197,14 @@ function_id: FUNCTION identifier {
 	else {
 		functions_symbol_table.push_back(string($2));
 	}
-	scope_symbol_table.clear();//the table should only contain the func id, remove it!!!
+	sc_symbol_table.clear();//the table should only contain the func id, remove it!!!
 };
 
 
 params: BEGIN_PARAMS declarations END_PARAMS {
 	//cout << "PARAMS^" << endl;
-	for(int i = 0; i < scope_symbol_table.size(); i++) {
-		cout << "= " << scope_symbol_table[i] << ", $" << i << endl; 
+	for(int i = 0; i < sc_symbol_table.size(); i++) {
+		cout << "= " << sc_symbol_table[i].ident << ", $" << i << endl; 
 	}
 };
 
@@ -234,11 +251,15 @@ identifier: IDENT {
 identifiers: identifier	{
 	//cout << $1 << endl;
 	$$ = $1;//must be passed up tree since it can be integer ID or function ID
-	pushToScope($$);
+	identifier a;
+	a.ident = $$;
+	pushToScope(a);
 }
 		| identifiers COMMA identifier {
 	//cout << $3 << endl;
-	pushToScope($3);
+	identifier a;
+	a.ident = $3;
+	pushToScope(a);
 	stackCounter++;
 };
 
@@ -251,8 +272,11 @@ declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF
 	//instruction_list.push_back(".[] " + string($1) + ", " + to_string($5));
 	//cout << $1 << endl;
 	//pushToScope($1);
-	for(int i = scope_symbol_table.size() - stackCounter; i < scope_symbol_table.size(); i++){
-		cout << ".[] " << scope_symbol_table[i] << ", " << to_string($5) << endl;
+	
+	for(int i = sc_symbol_table.size() - stackCounter; i < sc_symbol_table.size(); i++){
+		sc_symbol_table[i].isArray = true;
+		//I dont think identifier needs to store size because that will most of the time be a runtime error...???
+		cout << ".[] " << sc_symbol_table[i].ident << ", " << to_string($5) << endl;
 	}
 	stackCounter = 1;
 }
@@ -260,8 +284,8 @@ declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF
 	//instruction_list.push_back(". " + string($1));
 	//cout << $1 << endl;
 	//pushToScope($1);
-	for(int i = scope_symbol_table.size() - stackCounter; i < scope_symbol_table.size(); i++) {
-		cout << ". " << scope_symbol_table[i] << endl;
+	for(int i = sc_symbol_table.size() - stackCounter; i < sc_symbol_table.size(); i++) {
+		cout << ". " << sc_symbol_table[i].ident << endl;
 	}
 	stackCounter = 1;
 	
@@ -295,17 +319,20 @@ statements: statement SEMICOLON statements {}
 statement: var ASSIGN expression {
 
 	//instruction_vals should really only be used for multiple things like vars and expressions but I'll use it here... idk
-	if(instruction_vals[0].isArray) {
-		cout << "[]= " << instruction_vals[0].ident << ", " << instruction_vals[0].index << ", " << $3 << endl;
+	
+	identifier id = sc_symbol_table[indexOf($1)];	//this is a cheese... idc	
+	if(id.isArray) {
+		cout << "[]= " << id.ident << ", " << id.index << ", " << $3 << endl;
 	}
 	else {
 		cout << "= " << $1 << ", " << $3 << endl;
 	}
-//	cout << pushArray << "start\n";
+	
+//	//cout << pushArray << "start\n";
 //	for(int i = 0; i < instruction_vals.size(); i++) {
 //		cout << "THIS: " << instruction_vals[i].ident << endl;
 //	}
-//	cout << "end\n";
+//	//cout << "end\n";
 	
 //printf("statement -> var ASSIGN expression\n");
 	//cout << "= " << $1 << ", " << $3 << endl;	//while it's graceful we need a way to determine between array or non-array identifer only for var. Dont worry about expression a temp value will be pushed up into expression
@@ -496,10 +523,12 @@ multiplicative-expr: term {
 term: var {
 
 	string t = newTemp();
-	identifier a = instruction_vals[instruction_vals.size() - 1];
+	//identifier a = instruction_vals[instruction_vals.size() - 1];
+	
+	identifier id = sc_symbol_table[indexOf($1)];
 	//we could have just used instruction_vals.(top).isArray right???
-	if(pushArray){
-		cout << "=[] " << t << ", " << a.ident << ", " << a.index << endl;
+	if(id.isArray){
+		cout << "=[] " << t << ", " << id.ident << ", " << id.index << endl;
 	}
 	else {
 		cout << "= " << t << ", " << $1 << endl;
@@ -543,7 +572,7 @@ term: var {
 		for(int i = 0; i < expression_vals.size(); i++){
 			cout << "param " << expression_vals[i] << endl;
 		}
-		instruction_vals.clear();
+		//instruction_vals.clear();
 		expression_vals.clear();
 	}
 	string t = newTemp();
