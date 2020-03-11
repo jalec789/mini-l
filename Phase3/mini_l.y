@@ -174,7 +174,7 @@
 %token L_PAREN R_PAREN
 
 	//anything that utilizes $$ should be a type
-%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr relation-and-expr bool-expr pre-bool-expr pre-bool-expr-then-statements-else
+%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr relation-and-expr bool-expr pre-bool-expr-then pre-bool-expr-then-statements-else
 %type <num> number 
 
 
@@ -327,7 +327,7 @@ statements: statement SEMICOLON statements {}
 statement: var ASSIGN expression {
 	//instruction_vals should really only be used for multiple things like vars and expressions but I'll use it here... idk
 
-	identifier id = sc_symbol_table[indexOf($1)];	//this is a cheese... idc	
+	identifier id = sc_symbol_table[indexOf($1)];	//this is a cheese... idc... dont use index to refernece the actual array being created	
 	if(id.isArray) {
 		cout << "[]= " << id.ident << ", " << id.index << ", " << $3 << endl;
 	}
@@ -350,11 +350,13 @@ statement: var ASSIGN expression {
 	writeToArray = false;
 	readFromArray = false;
 }
-		| IF pre-bool-expr THEN statements ENDIF {
+	//changed: IF bool-expr THEN statements ENDIF
+		| IF pre-bool-expr-then statements ENDIF {
 	cout << ": " << $2 << endl;//this is the last label to skip THEN
 	instruction_vals.clear();
 	expression_vals.clear();
-}	
+}
+	//changed: IF bool-expr THEN statements ELSE statements ENDIF
 		| IF pre-bool-expr-then-statements-else statements ENDIF {
 	cout << ": " << $2 << endl;
 	instruction_vals.clear();
@@ -378,7 +380,6 @@ statement: var ASSIGN expression {
 	expression_vals.clear();
 }
 		| READ vars {
-	//...
 	for(int i = 0; i < instruction_vals.size(); i++){
 		if(!instruction_vals[i].isArray){
 			cout << ".< " << instruction_vals[i].ident << endl;
@@ -391,7 +392,6 @@ statement: var ASSIGN expression {
 	expression_vals.clear();
 }
 		| WRITE vars {
-	//...
 	//this is not working correctly right now but I believe we need to complete assign and others for it to look correct
 	for(int i = 0; i < instruction_vals.size(); i++){
 		if(!instruction_vals[i].isArray){
@@ -417,8 +417,12 @@ statement: var ASSIGN expression {
 
 
 
-//Create a label making rule only for non loops
-pre-bool-expr: bool-expr {
+
+//	***************************************************************
+//	*******  Create a label making rules only for non loops *******
+//	***************************************************************
+
+pre-bool-expr-then: bool-expr THEN {
 	string l1 = newLabel();
 	string l2 = newLabel();
 	string t = $1;
@@ -426,14 +430,13 @@ pre-bool-expr: bool-expr {
 	cout << ":= " << l2 << endl;	//skip label
 	cout << ": " << l1 << endl;
 	$$ = strdup(l2.c_str());	//pass up the skip label
-
-//when id's get made this will populate. but wihtout this it will disturb the statements in IF so we should clear here
+	//when id's get made this will populate. but wihtout this it will disturb the statements in IF so we should clear here
 	instruction_vals.clear();
 	expression_vals.clear();
 };
 
 
-pre-bool-expr-then-statements-else: pre-bool-expr THEN statements ELSE {
+pre-bool-expr-then-statements-else: pre-bool-expr-then statements ELSE {
 	string l3 = newLabel();
 	string l2 = $1;
 	cout << ":= " << l3 << endl;
@@ -441,19 +444,14 @@ pre-bool-expr-then-statements-else: pre-bool-expr THEN statements ELSE {
 	$$ = strdup(l3.c_str());
 }
 
-//nest: statements{
-//cout << " IF " << endl;
-//};
-
-//then: THEN {
-//	cout << " IF " << endl;
-//};
 
 
 
-bool-expr: relation-and-expr {
-	//cout << "bool-expr -> relation-and-expr: " << $1 << endl << endl;
-}
+
+
+
+
+bool-expr: relation-and-expr {/* leave blank */}
 		| relation-and-expr OR bool-expr {
 	string t = newTemp();
 	cout << "|| " << t << ", " << $1 << ", " << $3 << endl;
@@ -461,9 +459,7 @@ bool-expr: relation-and-expr {
 };
 
 
-relation-and-expr: relation-expr {
-	//cout << "relation-and-expr -> relation-expr: " << $1 << endl << endl;
-}
+relation-and-expr: relation-expr {/* leave blank */}
 		| relation-expr AND relation-and-expr {
 	string t = newTemp();
 	cout << "&& " << t << ", " << $1 << ", " << $3 << endl;
@@ -476,7 +472,6 @@ relation-expr: expression comp expression {
 	string t = newTemp();
 	cout << $2 << " " << t << ", " << $1 << ", " << $3 << endl;
 	$$ = strdup(t.c_str());
-	//cout <<"relation-expr -> expression comp expression: "<< $$ << endl;
 }
 		| TRUE {
 	string temp = "1";
@@ -487,7 +482,6 @@ relation-expr: expression comp expression {
 	$$ = strdup(temp.c_str());
 }
 		| L_PAREN bool-expr R_PAREN {
-	//cout <<"relation-expr -> L_PAREN bool-expr R_PAREN: " << $2 << endl << endl;
 	$$ = $2;
 }
 		| NOT expression comp expression {}
@@ -527,7 +521,7 @@ comp: EQ {
 expressions: expression {
 	expression_vals.push_back($1);
 }
-		| expression COMMA expressions {/* leave blank... */}
+		| expression COMMA expressions {/* leave blank */}
 ;
 
 expression: multiplicative-expr {
@@ -628,7 +622,11 @@ term: var {
 	cout << "call " << $1 << ", " << t << endl;
 	$$ = strdup(t.c_str());
 }
-		| identifier L_PAREN R_PAREN {}
+		| identifier L_PAREN R_PAREN {
+	string t = newTemp();
+	cout << "call " << $1 << ", " << t << endl;
+	$$ = strdup(t.c_str());
+}
 ;
 
 //we'll have (var: identifier) handle purals with push_back() - No can do here, it must be made in singular var. leave blank for now
@@ -647,11 +645,22 @@ var: identifier {
 }
 		| identifier L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
 	//check to see if id exists AND IS array type, if not error and exit...???
-	identifier a;
-	a.ident = $1;
-	a.isArray = true;
-	a.index = $3;
+	identifier &a = sc_symbol_table[indexOf($1)];
+	
+	if(a.isArray){
+		a.ident = $1;
+		a.isArray = true;
+		a.index = $3;
+	}
+	else {
+		exit(0); //need error message here
+	}
+	//cout << "HELP: " << a.ident << a.index << endl << endl;
 	instruction_vals.push_back(a);
+//	for(int i = 0; i < instruction_vals.size(); i++){
+//		cout << instruction_vals[i].ident << endl;
+//	}
+	//cout << "CHECK: " << sc_symbol_table[indexOf($1)].index << endl << endl;
 	pushArray = true;	//we know when to push an array type, only used if we have a array type on the right hand side of a statement
 	$$ = $1;
 };
