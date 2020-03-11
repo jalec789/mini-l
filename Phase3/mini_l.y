@@ -672,7 +672,7 @@ var: identifier {
 		a.index = $3;
 	}
 	else {
-		exit(0); //need error message here
+		//exit(0); //need error message here
 	}
 	//cout << "HELP: " << a.ident << a.index << endl << endl;
 	instruction_vals.push_back(a);
