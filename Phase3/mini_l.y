@@ -131,7 +131,7 @@
 		for(int i = 0; i < sc_symbol_table.size(); i++) {
 			if(a.ident == sc_symbol_table[i].ident){
 				cerr << "\n\nError: somewhere there already exists an ID: " << a.ident << endl;
-				exit(0);	//throw into strdup() line number
+				//exit(0);	//throw into strdup() line number
 			}
 		}
 
@@ -200,7 +200,7 @@ function_id: FUNCTION identifier {
 		char temp[128];
 		snprintf(temp, 128, "Redeclaration of function %s", $2);
 		yyerror(temp);
-		exit(0);
+		//exit(0);
 	}
 	else {
 		functions_symbol_table.push_back(string($2));
