@@ -21,7 +21,7 @@
 	struct identifier {
 		string ident;
 		bool isArray = false;
-		string index;
+		string index = "0";
 	};
 	
 	vector<string> functions_symbol_table;
@@ -299,7 +299,7 @@ declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF
 	
 };
 
-declarations: %empty {}
+declarations: %empty {/* leave blank */}
 		| declaration SEMICOLON declarations {
 	//CREATE VECTOR of VECTORS... new scope add to the stack
 	//...
@@ -320,8 +320,8 @@ declarations: %empty {}
 
 
 	//can statments be empty???
-statements: statement SEMICOLON statements {}
-		| statement SEMICOLON {};
+statements: statement SEMICOLON statements {/* leave blank */}
+		| statement SEMICOLON {/* leave blank */};
 
 
 statement: var ASSIGN expression {
@@ -363,7 +363,6 @@ statement: var ASSIGN expression {
 	expression_vals.clear();
 }
 		| WHILE bool-expr BEGINLOOP statements ENDLOOP {
-	cout << "loop here\n";
 	//...
 	instruction_vals.clear();
 	expression_vals.clear();
@@ -405,7 +404,7 @@ statement: var ASSIGN expression {
 	expression_vals.clear();
 }
 		| CONTINUE {
-	//...
+	//this doesnt really do anything. we can leave it as is
 	instruction_vals.clear();
 	expression_vals.clear();
 }
@@ -434,7 +433,6 @@ pre-bool-expr-then: bool-expr THEN {
 	instruction_vals.clear();
 	expression_vals.clear();
 };
-
 
 pre-bool-expr-then-statements-else: pre-bool-expr-then statements ELSE {
 	string l3 = newLabel();
@@ -484,10 +482,28 @@ relation-expr: expression comp expression {
 		| L_PAREN bool-expr R_PAREN {
 	$$ = $2;
 }
-		| NOT expression comp expression {}
-		| NOT TRUE {}
-		| NOT FALSE {}
-		| NOT L_PAREN bool-expr R_PAREN {}
+		| NOT relation-expr{
+	string t = newTemp();
+	cout << "! " << t << ", " << $2 << endl;
+	$$ = strdup(t.c_str());
+}
+//		| NOT expression comp expression {
+//	//This one is unclear what they are asking for...???
+//	//couldnt we rewrite it as NOT relation-expr ???
+//	//what about NOT expression ???
+//	string t = newTemp();
+//	cout << "! " << t << ", " << $2 << endl;
+//	$$ = strdup(t.c_str());
+//}
+//		| NOT TRUE {
+//	string temp = "0";
+//	$$ = strdup(temp.c_str());
+//}
+//		| NOT FALSE {
+//	string temp = "1";
+//	$$ = strdup(temp.c_str());
+//}
+//		| NOT L_PAREN bool-expr R_PAREN {}
 ;
 
 comp: EQ {
@@ -623,9 +639,12 @@ term: var {
 	$$ = strdup(t.c_str());
 }
 		| identifier L_PAREN R_PAREN {
-	string t = newTemp();
-	cout << "call " << $1 << ", " << t << endl;
-	$$ = strdup(t.c_str());
+	if (functionIdExists($1)){
+		string t = newTemp();
+		cout << "call " << $1 << ", " << t << endl;
+		$$ = strdup(t.c_str());
+	}
+	
 }
 ;
 
@@ -645,7 +664,7 @@ var: identifier {
 }
 		| identifier L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
 	//check to see if id exists AND IS array type, if not error and exit...???
-	identifier &a = sc_symbol_table[indexOf($1)];
+	identifier &a = sc_symbol_table[indexOf($1)];	//yeah this is the only time i'll use a de-ref
 	
 	if(a.isArray){
 		a.ident = $1;
@@ -660,7 +679,7 @@ var: identifier {
 //	for(int i = 0; i < instruction_vals.size(); i++){
 //		cout << instruction_vals[i].ident << endl;
 //	}
-	//cout << "CHECK: " << sc_symbol_table[indexOf($1)].index << endl << endl;
+//	cout << "CHECK: " << sc_symbol_table[indexOf($1)].index << endl << endl;
 	pushArray = true;	//we know when to push an array type, only used if we have a array type on the right hand side of a statement
 	$$ = $1;
 };
