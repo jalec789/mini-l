@@ -89,7 +89,7 @@
 			}
 		}
 		//Need error line here...???
-		exit(0);
+		//exit(0);
 	}
 
 
@@ -117,7 +117,7 @@
 		}
 		else {
 			cerr << "\n\nError: no function of ID: " << a << "() was found" << endl;
-			exit(0);	//throw into strdup() line number
+			//exit(0);	//throw into strdup() line number
 		}
 	}
 
