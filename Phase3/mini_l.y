@@ -174,7 +174,7 @@
 %token L_PAREN R_PAREN
 
 	//anything that utilizes $$ should be a type
-%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr relation-and-expr bool-expr pre-bool-expr-then pre-bool-expr-then-statements-else
+%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr relation-and-expr bool-expr pre-bool-expr-then pre-bool-expr-then-statements-else while pre-bool-expr-beginloop do semicolon-label1 bool-expr-semicolon-label2
 %type <num> number 
 
 
@@ -362,21 +362,37 @@ statement: var ASSIGN expression {
 	instruction_vals.clear();
 	expression_vals.clear();
 }
-		| WHILE bool-expr BEGINLOOP statements ENDLOOP {
-	//...
+		| while pre-bool-expr-beginloop statements ENDLOOP {
+	cout << ":= " << $1 << endl;
+	cout << ": " << $2 << endl;
 	instruction_vals.clear();
 	expression_vals.clear();
 }
-		| DO BEGINLOOP statements ENDLOOP WHILE bool-expr {
-	//...
+		| do BEGINLOOP statements ENDLOOP WHILE bool-expr {
+	string t = $6;
+	cout << "?:= " << $1 << ", " << t << endl;
 	instruction_vals.clear();
 	expression_vals.clear();
 }
-		| FOR var ASSIGN number SEMICOLON bool-expr SEMICOLON var ASSIGN expression BEGINLOOP statements ENDLOOP {
-	//WORRY about the var here: determine if id is array or non-array type
-	//...
+		| FOR var ASSIGN number semicolon-label1 bool-expr-semicolon-label2 var ASSIGN expression BEGINLOOP statements ENDLOOP {
+	//whatever is in var ASSIGN expression needs to go here
+	identifier id = sc_symbol_table[indexOf($7)];
+	if(id.isArray) {
+		cout << "[]= " << id.ident << ", " << id.index << ", " << $9 << endl;
+	}
+	else {
+		cout << "= " << $7 << ", " << $9 << endl;
+	}
 	instruction_vals.clear();
 	expression_vals.clear();
+	writeToArray = false;
+	readFromArray = false;
+	
+	//after that we can just cout labels
+	string l1 = $5;
+	string l3 = $6;
+	cout << ":= " << l1 << endl;
+	cout << ": " << l3 << endl;
 }
 		| READ vars {
 	for(int i = 0; i < instruction_vals.size(); i++){
@@ -418,7 +434,7 @@ statement: var ASSIGN expression {
 
 
 //	***************************************************************
-//	*******  Create a label making rules only for non loops *******
+//	*******  Create a label making rules only for NON-LOOPS *******
 //	***************************************************************
 
 pre-bool-expr-then: bool-expr THEN {
@@ -440,7 +456,60 @@ pre-bool-expr-then-statements-else: pre-bool-expr-then statements ELSE {
 	cout << ":= " << l3 << endl;
 	cout << ": " << l2 << endl;
 	$$ = strdup(l3.c_str());
+	instruction_vals.clear();
+	expression_vals.clear();
 }
+
+
+//	***************************************************************
+//	*******  Create a label making rules only for LOOPS ***********
+//	***************************************************************
+
+//	while
+pre-bool-expr-beginloop: bool-expr BEGINLOOP {
+	string l1 = newLabel();
+	string l2 = newLabel();
+	string t = $1;
+	cout << "?:= " << l1 << ", " << t << endl;
+	cout << ":= " << l2 << endl;
+	cout << ": " << l1 << endl;
+	$$ = strdup(l2.c_str());
+	//is this the same thing... yeah it is oh well
+	instruction_vals.clear();
+	expression_vals.clear();
+};
+
+while: WHILE{
+	string l3 = newLabel();
+	cout << ": " << l3 << endl;
+	$$ = strdup(l3.c_str());
+};
+
+//	do-while
+do: DO {
+	string l1 = newLabel();
+	cout << ": " << l1 << endl;
+	$$ = strdup(l1.c_str());
+};
+
+//	for loop
+semicolon-label1: SEMICOLON {
+	string l1 = newLabel();
+	cout << ": " << l1 << endl;
+	$$ = strdup(l1.c_str());
+};
+
+bool-expr-semicolon-label2: bool-expr SEMICOLON {
+	string l2 = newLabel();
+	string l3 = newLabel();
+	string t = $1;
+	cout << "?:= " << l2 << ", " << t << endl;
+	cout << ":= " << l3 << endl;
+	cout << ": " << l2 << endl;
+	$$ = strdup(l3.c_str());
+};
+
+
 
 
 
