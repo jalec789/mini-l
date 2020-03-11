@@ -50,9 +50,9 @@
 	//newtemp vectors
 	vector<string> temp_var;
 	//newtemp functions
-	vector<string> temp_func;
+//	vector<string> temp_func;
 	//newlabel vectors
-//	vector<string> label_var;
+	vector<string> label_var;
 //	//newlabel functions
 //	vector<string> label_func;
 
@@ -104,7 +104,7 @@
 	
 	string newLabel(){
 		string s = "_label_" + to_string(label_count++);
-		//temp_var.push_back(s);
+		label_var.push_back(s);
 		//cout << ". " << s << endl;
 		return s;
 	}
@@ -174,7 +174,7 @@
 %token L_PAREN R_PAREN
 
 	//anything that utilizes $$ should be a type
-%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr relation-and-expr bool-expr pre-bool-expr
+%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr relation-and-expr bool-expr pre-bool-expr pre-bool-expr-then-statements-else
 %type <num> number 
 
 
@@ -351,14 +351,14 @@ statement: var ASSIGN expression {
 	readFromArray = false;
 }
 		| IF pre-bool-expr THEN statements ENDIF {
-	//cout << " IF " << endl;
-	//...
 	cout << ": " << $2 << endl;//this is the last label to skip THEN
 	instruction_vals.clear();
 	expression_vals.clear();
 }	
-		| IF pre-bool-expr THEN statements ELSE statements ENDIF {
-	//...
+		| IF pre-bool-expr-then-statements-else statements ENDIF {
+	
+	
+	cout << ": " << $2 << endl;
 	instruction_vals.clear();
 	expression_vals.clear();
 }
@@ -435,6 +435,14 @@ pre-bool-expr: bool-expr {
 };
 
 
+pre-bool-expr-then-statements-else: pre-bool-expr THEN statements ELSE {
+	string l3 = newLabel();
+	string l2 = $1;
+	cout << ":= " << l3 << endl;
+	cout << ": " << l2 << endl;
+	$$ = strdup(l3.c_str());
+}
+
 //nest: statements{
 //cout << " IF " << endl;
 //};
@@ -491,7 +499,7 @@ relation-expr: expression comp expression {
 ;
 
 comp: EQ {
-	string t = "=";
+	string t = "==";
 	$$ = strdup(t.c_str());
 }
 		| NEQ {
