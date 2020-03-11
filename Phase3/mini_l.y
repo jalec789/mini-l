@@ -325,7 +325,6 @@ statements: statement SEMICOLON statements {}
 
 
 statement: var ASSIGN expression {
-
 	//instruction_vals should really only be used for multiple things like vars and expressions but I'll use it here... idk
 
 	identifier id = sc_symbol_table[indexOf($1)];	//this is a cheese... idc	
@@ -354,7 +353,6 @@ statement: var ASSIGN expression {
 		| IF pre-bool-expr THEN statements ENDIF {
 	//cout << " IF " << endl;
 	//...
-	
 	cout << ": " << $2 << endl;//this is the last label to skip THEN
 	instruction_vals.clear();
 	expression_vals.clear();
@@ -430,6 +428,10 @@ pre-bool-expr: bool-expr {
 	cout << ":= " << l2 << endl;	//skip label
 	cout << ": " << l1 << endl;
 	$$ = strdup(l2.c_str());	//pass up the skip label
+
+//when id's get made this will populate. but wihtout this it will disturb the statements in IF so we should clear here
+	instruction_vals.clear();
+	expression_vals.clear();
 };
 
 
@@ -679,7 +681,8 @@ int main(int argc, char **argv) {
 
 
 void yyerror(const char *MSG) {
-	printf("** Line %d, position %d: %s\n", line, column, MSG);
+	printf("** Line %d, position %d: %s\n", line, column, MSG);	//error position not outputting correctly in some cases
+	//printf("** Line %d, position %d: \n", line, MSG);//error position not outputting correctly in some cases, maybe i read it worng, just double check???
 	//printf("");
 	
 	//printf("Error at line %d, column %d: unrecognized symbol \"%.*s\"\n",line, column, yyleng, yytext);
