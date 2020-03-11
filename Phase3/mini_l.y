@@ -34,7 +34,9 @@
 	vector<string> expression_vals;	//store expression: temp values for a single instruction in body. This should clear after every instruction. Used for plural parameters for a function in expressions
 
 	int stackCounter = 1;	//used for mulit-declaration, may use for stacks in statements, used in PARAMS and LOCALS
-	int temp_count = 0;	//track and number the number of temporary varibles produced, used in BODY // USE size() instead
+	int temp_count = 0;	//track and number the number of temporary varibles produced, used in BODY 
+	int label_count = 0;
+	// USE size() instead
 	//int lineNum = 0;// delete this later just for debugging???...
 
 
@@ -94,11 +96,17 @@
 
 	//returns string and increments the tempcount no need to worry about it in the cout statment, don't use temp count for indexing, use size() instead
 	string newTemp(){
-		string newStr = "_temp_" + to_string(temp_count++);
-		temp_var.push_back(newStr);
-		cout << ". " << newStr << endl;
-		return newStr;
-//		return string("_temp_" + to_string(temp_count++));
+		string s = "_temp_" + to_string(temp_count++);
+		temp_var.push_back(s);
+		cout << ". " << s << endl;
+		return s;
+	}
+	
+	string newLabel(){
+		string s = "_label_" + to_string(label_count++);
+		//temp_var.push_back(s);
+		//cout << ". " << s << endl;
+		return s;
 	}
 
 
@@ -166,7 +174,7 @@
 %token L_PAREN R_PAREN
 
 	//anything that utilizes $$ should be a type
-%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr
+%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr relation-and-expr bool-expr pre-bool-expr
 %type <num> number 
 
 
@@ -319,7 +327,7 @@ statements: statement SEMICOLON statements {}
 statement: var ASSIGN expression {
 
 	//instruction_vals should really only be used for multiple things like vars and expressions but I'll use it here... idk
-	
+
 	identifier id = sc_symbol_table[indexOf($1)];	//this is a cheese... idc	
 	if(id.isArray) {
 		cout << "[]= " << id.ident << ", " << id.index << ", " << $3 << endl;
@@ -327,15 +335,15 @@ statement: var ASSIGN expression {
 	else {
 		cout << "= " << $1 << ", " << $3 << endl;
 	}
-	
+
 //	//cout << pushArray << "start\n";
 //	for(int i = 0; i < instruction_vals.size(); i++) {
 //		cout << "THIS: " << instruction_vals[i].ident << endl;
 //	}
 //	//cout << "end\n";
-	
-//printf("statement -> var ASSIGN expression\n");
-	//cout << "= " << $1 << ", " << $3 << endl;	//while it's graceful we need a way to determine between array or non-array identifer only for var. Dont worry about expression a temp value will be pushed up into expression
+
+	//cout << "= " << $1 << ", " << $3 << endl;	
+	//while it's graceful we need a way to determine between array or non-array identifer only for var. Dont worry about expression a temp value will be pushed up into expression
 	
 	//reset and default
 	instruction_vals.clear();
@@ -343,13 +351,15 @@ statement: var ASSIGN expression {
 	writeToArray = false;
 	readFromArray = false;
 }
-		| IF bool-expr THEN statements ENDIF {
-	
+		| IF pre-bool-expr THEN statements ENDIF {
+	//cout << " IF " << endl;
 	//...
+	
+	cout << ": " << $2 << endl;//this is the last label to skip THEN
 	instruction_vals.clear();
 	expression_vals.clear();
 }	
-		| IF bool-expr THEN statements ELSE statements ENDIF {
+		| IF pre-bool-expr THEN statements ELSE statements ENDIF {
 	//...
 	instruction_vals.clear();
 	expression_vals.clear();
@@ -404,44 +414,73 @@ statement: var ASSIGN expression {
 	expression_vals.clear();
 }
 		| RETURN expression {
-	//...
-//cout << "RET END"<<endl;
+	cout << "ret "<< $2 << endl;
 	instruction_vals.clear();
 	expression_vals.clear();
 };
 
 
 
-bool-expr: relation-and-expr {}
-		| relation-and-expr OR bool-expr {}
-;
+//Create a label making rule only for non loops
+pre-bool-expr: bool-expr {
+	string l1 = newLabel();
+	string l2 = newLabel();
+	string t = $1;
+	cout << "?:= "<< l1 << ", " << t << endl;	//then label
+	cout << ":= " << l2 << endl;	//skip label
+	cout << ": " << l1 << endl;
+	$$ = strdup(l2.c_str());	//pass up the skip label
+};
 
 
-relation-and-expr: relation-expr {}
-		| relation-expr AND relation-and-expr {}
-;
+//nest: statements{
+//cout << " IF " << endl;
+//};
+
+//then: THEN {
+//	cout << " IF " << endl;
+//};
+
+
+
+bool-expr: relation-and-expr {
+	//cout << "bool-expr -> relation-and-expr: " << $1 << endl << endl;
+}
+		| relation-and-expr OR bool-expr {
+	string t = newTemp();
+	cout << "|| " << t << ", " << $1 << ", " << $3 << endl;
+	$$ = strdup(t.c_str());
+};
+
+
+relation-and-expr: relation-expr {
+	//cout << "relation-and-expr -> relation-expr: " << $1 << endl << endl;
+}
+		| relation-expr AND relation-and-expr {
+	string t = newTemp();
+	cout << "&& " << t << ", " << $1 << ", " << $3 << endl;
+	$$ = strdup(t.c_str());
+};
 
 
 
 relation-expr: expression comp expression {
-//	cout << $2 << " " << $1 << ", " << $3 << endl;
 	string t = newTemp();
 	cout << $2 << " " << t << ", " << $1 << ", " << $3 << endl;
 	$$ = strdup(t.c_str());
+	//cout <<"relation-expr -> expression comp expression: "<< $$ << endl;
 }
 		| TRUE {
-	//cout << "Hello from beginning" << endl;
 	string temp = "1";
-	//cout << "Hello from middle, this is temp: " << temp << endl;
 	$$ = strdup(temp.c_str());
-	//cout << "Hello from true" << endl;
 }
 		| FALSE {
 	string temp = "0";
 	$$ = strdup(temp.c_str());
 }
 		| L_PAREN bool-expr R_PAREN {
-	// $$ = strdup($2);   //Unsure of this one for now... 
+	//cout <<"relation-expr -> L_PAREN bool-expr R_PAREN: " << $2 << endl << endl;
+	$$ = $2;
 }
 		| NOT expression comp expression {}
 		| NOT TRUE {}
