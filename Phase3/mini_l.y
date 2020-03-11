@@ -356,8 +356,6 @@ statement: var ASSIGN expression {
 	expression_vals.clear();
 }	
 		| IF pre-bool-expr-then-statements-else statements ENDIF {
-	
-	
 	cout << ": " << $2 << endl;
 	instruction_vals.clear();
 	expression_vals.clear();
@@ -606,7 +604,9 @@ term: var {
 	$$ = strdup(t.c_str());
 //	cout << "term -> number: " << $$ << endl;
 }
-		| L_PAREN expression R_PAREN {/* Leave Blank??? */}
+		| L_PAREN expression R_PAREN {
+	$$ = $2;
+}
 		| SUB var %prec UMINUS {}
 		| SUB number %prec UMINUS {
 //	string t = newTemp();
