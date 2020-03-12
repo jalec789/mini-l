@@ -36,12 +36,14 @@
 	int stackCounter = 1;	//used for mulit-declaration, may use for stacks in statements, used in PARAMS and LOCALS
 	int temp_count = 0;	//track and number the number of temporary varibles produced, used in BODY 
 	int label_count = 0;
+	int continue_label_count = 0;
 
 
 	int semicolonCount = 0;	//for debuggin purposes in BODY
 	bool writeToArray = false;
 	bool readFromArray = false;
 	bool pushArray=false;
+	bool continueState = false;
 
 
 	//temporaries...
@@ -51,8 +53,7 @@
 //	vector<string> temp_func;
 	//newlabel vectors
 	vector<string> label_var;
-//	//newlabel functions
-//	vector<string> label_func;
+	vector<string> continue_label_var;
 
 
 	//interpreter string for each function
@@ -104,6 +105,13 @@
 	string newLabel(){
 		string s = "_label_" + to_string(label_count++);
 		label_var.push_back(s);
+		//cout << ". " << s << endl;
+		return s;
+	}
+	
+	string newContinueLabel(){
+		string s = "_cont_label_" + to_string(continue_label_count++);
+		continue_label_var.push_back(s);
 		//cout << ". " << s << endl;
 		return s;
 	}
@@ -171,7 +179,7 @@
 %token L_PAREN R_PAREN
 
 	//anything that utilizes $$ should be a type
-%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr relation-and-expr bool-expr pre-bool-expr-then pre-bool-expr-then-statements-else while pre-bool-expr-beginloop do semicolon-label1 bool-expr-semicolon-label2
+%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr relation-and-expr bool-expr pre-bool-expr-then pre-bool-expr-then-statements-else while pre-bool-expr-beginloop do semicolon-label1 bool-expr-semicolon-label2 statements
 %type <num> number 
 
 
@@ -359,18 +367,23 @@ statement: var ASSIGN expression {
 	expression_vals.clear();
 }
 		| while pre-bool-expr-beginloop statements ENDLOOP {
+	if(continueState == true) {
+		cout << ": " << continue_label_var.back() << endl;
+		continue_label_var.pop_back();
+		continueState = false;
+	}
 	cout << ":= " << $1 << endl;
 	cout << ": " << $2 << endl;
 	instruction_vals.clear();
 	expression_vals.clear();
 }
-		| do BEGINLOOP statements ENDLOOP WHILE bool-expr {
+		| do BEGINLOOP statements endloop WHILE bool-expr {
 	string t = $6;
 	cout << "?:= " << $1 << ", " << t << endl;
 	instruction_vals.clear();
 	expression_vals.clear();
 }
-		| FOR var ASSIGN number semicolon-label1 bool-expr-semicolon-label2 var ASSIGN expression BEGINLOOP statements ENDLOOP {
+		| FOR var ASSIGN number semicolon-label1 bool-expr-semicolon-label2 var ASSIGN expression BEGINLOOP statements endloop {
 	//whatever is in var ASSIGN expression needs to go here
 	identifier id = sc_symbol_table[indexOf($7)];
 	if(id.isArray) {
@@ -391,32 +404,53 @@ statement: var ASSIGN expression {
 	cout << ": " << l3 << endl;
 }
 		| READ vars {
+	int top = instruction_vals.size() - 1;
 	for(int i = 0; i < instruction_vals.size(); i++){
-		if(!instruction_vals[i].isArray){
-			cout << ".< " << instruction_vals[i].ident << endl;
+		if(!instruction_vals[top - i].isArray){
+			cout << ".< " << instruction_vals[top - i].ident << endl;
 		}
 		else {
-			cout << ".[]< " << instruction_vals[i].ident << ", " << instruction_vals[i].index << endl;
+			cout << ".[]< " << instruction_vals[top - i].ident << ", " << instruction_vals[top - i].index << endl;
 		}
 	}
+
 	instruction_vals.clear();
 	expression_vals.clear();
 }
 		| WRITE vars {
 	//this is not working correctly right now but I believe we need to complete assign and others for it to look correct
+//	for(int i = 0; i < instruction_vals.size(); i++){
+//		if(!instruction_vals[i].isArray){
+//			cout << ".> " << instruction_vals[i].ident << endl;
+//		}
+//		else {
+//			cout << ".[]> " << instruction_vals[i].ident << ", " << instruction_vals[i].index << endl;
+//		}
+//	}
+	int top = instruction_vals.size() - 1;
 	for(int i = 0; i < instruction_vals.size(); i++){
-		if(!instruction_vals[i].isArray){
-			cout << ".> " << instruction_vals[i].ident << endl;
+		if(!instruction_vals[top - i].isArray){
+			cout << ".> " << instruction_vals[top - i].ident << endl;
 		}
 		else {
-			cout << ".[]> " << instruction_vals[i].ident << ", " << instruction_vals[i].index << endl;
+			cout << ".[]> " << instruction_vals[top - i].ident << ", " << instruction_vals[top - i].index << endl;
 		}
 	}
 	instruction_vals.clear();
 	expression_vals.clear();
 }
 		| CONTINUE {
-	//this doesnt really do anything. we can leave it as is
+	string l;
+	//jump to the next label
+	if(continueState == false) {
+		continueState = true;	//yeah this is a bad fix lol
+		l = newContinueLabel();
+		cout << ":= " << l << endl;
+	}
+	else {
+		l = continue_label_var.back();
+		cout << ":= " << l << endl;
+	}
 	instruction_vals.clear();
 	expression_vals.clear();
 }
@@ -486,6 +520,14 @@ do: DO {
 	string l1 = newLabel();
 	cout << ": " << l1 << endl;
 	$$ = strdup(l1.c_str());
+};
+
+endloop: ENDLOOP {
+	if(continueState == true) {
+		cout << ": " << continue_label_var.back() << endl;
+		continue_label_var.pop_back();
+		continueState = false;
+	}
 };
 
 //	for loop
@@ -710,7 +752,7 @@ term: var {
 			cout << "param " << expression_vals[i] << endl;
 		}
 		//instruction_vals.clear();
-		expression_vals.clear();
+		expression_vals.clear();	//This will cause a problem when a function parameter expression is negative???
 	}
 	string t = newTemp();
 	cout << "call " << $1 << ", " << t << endl;
@@ -726,8 +768,19 @@ term: var {
 ;
 
 //we'll have (var: identifier) handle purals with push_back() - No can do here, it must be made in singular var. leave blank for now
-vars: var {/* leave blank... (it would be nice to populate vector here but we can't since we need to recieve 2 values of input for array type identifiers) */}
-		|var COMMA vars {/* leave blank... */};
+vars: var {
+	identifier &a = sc_symbol_table[indexOf($1)];
+	instruction_vals.push_back(a);
+	
+//	for(int i = 0; i < instruction_vals.size(); i++){
+//		cout << "CHECK: " << instruction_vals[i].ident << endl;
+//	}
+}
+		|var COMMA vars {
+	identifier &a = sc_symbol_table[indexOf($1)];
+	instruction_vals.push_back(a);
+	
+};
 
 
 //These should populate a vector (to make array types work) AND if needed return the id
@@ -741,7 +794,7 @@ var: identifier {
 	else {
 		identifier a;
 		a.ident = $1;
-		instruction_vals.push_back(a);
+		//instruction_vals.push_back(a);
 		$$ = $1;
 	}
 }
@@ -759,7 +812,8 @@ var: identifier {
 		yyerror("Identifier is not array type");
 	}
 	//cout << "HELP: " << a.ident << a.index << endl << endl;
-	instruction_vals.push_back(a);
+//	instruction_vals.push_back(a);
+
 //	for(int i = 0; i < instruction_vals.size(); i++){
 //		cout << instruction_vals[i].ident << endl;
 //	}
