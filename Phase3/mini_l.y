@@ -37,6 +37,17 @@
 	int temp_count = 0;	//track and number the number of temporary varibles produced, used in BODY 
 	int label_count = 0;
 	int continue_label_count = 0;
+	//for vars
+	int varTop = 0;
+	int vars_count = 1;
+	vector<int> temps_made;
+	
+	string temp_index;
+	
+//	struct IdArId {
+//		string instruction;
+//		int temps_made;
+//	};
 
 
 	int semicolonCount = 0;	//for debuggin purposes in BODY
@@ -98,6 +109,7 @@
 	string newTemp(){
 		string s = "_temp_" + to_string(temp_count++);
 		temp_var.push_back(s);
+		temps_made.back()++;
 		cout << ". " << s << endl;
 		return s;
 	}
@@ -144,6 +156,9 @@
 	}
 
 
+struct str_index{
+	string index;
+};
 
 
 %}
@@ -153,6 +168,7 @@
 %union{
 	char* id;
 	int num;
+	struct str_index;
 }
 	//precendence defined here
 %error-verbose
@@ -179,7 +195,7 @@
 %token L_PAREN R_PAREN
 
 	//anything that utilizes $$ should be a type
-%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr relation-and-expr bool-expr pre-bool-expr-then pre-bool-expr-then-statements-else while pre-bool-expr-beginloop do semicolon-label1 bool-expr-semicolon-label2 statements
+%type <id> identifier identifiers expression multiplicative-expr term var comp relation-expr relation-and-expr bool-expr pre-bool-expr-then pre-bool-expr-then-statements-else while pre-bool-expr-beginloop do semicolon-label1 bool-expr-semicolon-label2 statements index var-assign
 %type <num> number 
 
 
@@ -192,7 +208,7 @@ prog_start: %empty	{/*cout << "prog_start -> epsilon\n";*/ /* do we have an erro
 
 // function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY {};
 
-function: function_id SEMICOLON	params locals body {
+function: function_id	{temps_made.push_back(0);} SEMICOLON	params locals body {
 	cout << "endfunc" << endl << endl;
 	//instruction_list.clear();
 	sc_symbol_table.clear();	//clear local scope of function
@@ -327,16 +343,15 @@ declarations: %empty {/* leave blank */}
 statements: statement SEMICOLON statements {/* leave blank */}
 		| statement SEMICOLON {/* leave blank */};
 
-
-statement: var ASSIGN expression {
+statement: var-assign expression {
 	//instruction_vals should really only be used for multiple things like vars and expressions but I'll use it here... idk
 
 	identifier id = sc_symbol_table[indexOf($1)];	//this is a cheese... idc... dont use index to refernece the actual array being created	
 	if(id.isArray) {
-		cout << "[]= " << id.ident << ", " << id.index << ", " << $3 << endl;
+		cout << "[]= " << id.ident << ", " << temp_index << ", " << $2 << endl;
 	}
 	else {
-		cout << "= " << $1 << ", " << $3 << endl;
+		cout << "= " << $1 << ", " << $2 << endl;
 	}
 
 //	//cout << pushArray << "start\n";
@@ -403,7 +418,7 @@ statement: var ASSIGN expression {
 	cout << ":= " << l1 << endl;
 	cout << ": " << l3 << endl;
 }
-		| READ vars {
+		| READ  {temps_made.clear();temps_made.push_back(0);} vars {
 	int top = instruction_vals.size() - 1;
 	for(int i = 0; i < instruction_vals.size(); i++){
 		if(!instruction_vals[top - i].isArray){
@@ -413,11 +428,12 @@ statement: var ASSIGN expression {
 			cout << ".[]< " << instruction_vals[top - i].ident << ", " << instruction_vals[top - i].index << endl;
 		}
 	}
-
+	
+	varTop = 0;
 	instruction_vals.clear();
 	expression_vals.clear();
 }
-		| WRITE vars {
+		| WRITE {temps_made.clear();temps_made.push_back(0);} vars {
 	//this is not working correctly right now but I believe we need to complete assign and others for it to look correct
 //	for(int i = 0; i < instruction_vals.size(); i++){
 //		if(!instruction_vals[i].isArray){
@@ -436,6 +452,8 @@ statement: var ASSIGN expression {
 			cout << ".[]> " << instruction_vals[top - i].ident << ", " << instruction_vals[top - i].index << endl;
 		}
 	}
+	
+	varTop = 0;
 	instruction_vals.clear();
 	expression_vals.clear();
 }
@@ -460,6 +478,11 @@ statement: var ASSIGN expression {
 	expression_vals.clear();
 };
 
+
+var-assign: var ASSIGN {
+	temp_index = sc_symbol_table[indexOf($1)].index;
+	$$ = $1;
+};
 
 
 
@@ -769,16 +792,37 @@ term: var {
 
 //we'll have (var: identifier) handle purals with push_back() - No can do here, it must be made in singular var. leave blank for now
 vars: var {
-	identifier &a = sc_symbol_table[indexOf($1)];
-	instruction_vals.push_back(a);
+//	cout << "TEMPS_MADE: " << temps_made.back() << endl;
+	if (sc_symbol_table[indexOf($1)].isArray){
+		varTop = temp_var.size();
+		identifier &a = sc_symbol_table[indexOf($1)];
+		identifier b = a;
+		b.index = temp_var[varTop - 1];
+		//temps_made.pop_back();
+		instruction_vals.push_back(b);
+	}
+	else {
+		identifier &a = sc_symbol_table[indexOf($1)];
+		instruction_vals.push_back(a);
+	}
 	
-//	for(int i = 0; i < instruction_vals.size(); i++){
-//		cout << "CHECK: " << instruction_vals[i].ident << endl;
-//	}
+	
 }
-		|var COMMA vars {
-	identifier &a = sc_symbol_table[indexOf($1)];
-	instruction_vals.push_back(a);
+		|var COMMA{temps_made.push_back(0);} vars {
+//	cout << "TEMPS_MADE: " << temps_made.back() << endl;
+	if (sc_symbol_table[indexOf($1)].isArray){
+		identifier &a = sc_symbol_table[indexOf($1)];
+		identifier b = a;
+
+		b.index = temp_var[varTop - temps_made.back() -1];
+		varTop = varTop - temps_made.back();
+		temps_made.pop_back();
+		instruction_vals.push_back(b);
+	}
+	else {
+		identifier &a = sc_symbol_table[indexOf($1)];
+		instruction_vals.push_back(a);
+	}
 	
 };
 
@@ -787,8 +831,10 @@ vars: var {
 var: identifier {
 	//indexOf: checks to see if id exists
 	identifier &a = sc_symbol_table[indexOf($1)];
+//	identifier b = a;
+//	instruction_vals.push_back(b);
 	//checks IS NOT array type otherwise yyerror()
-	if(a.isArray){
+	if(a.isArray) {
 		yyerror("Identifier is Array type and requires [index]");
 	}
 	else {
@@ -798,15 +844,17 @@ var: identifier {
 		$$ = $1;
 	}
 }
-		| identifier L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
+		| identifier index {
 	//indexOf: checks to see if id exists
 	identifier &a = sc_symbol_table[indexOf($1)];
+//	identifier b = a;
+//	instruction_vals.push_back(b);
 	//yeah this is the only time i'll use a de-ref
 	//AND IS array type otherwise yyerror()
 	if(a.isArray){
 		a.ident = $1;
 		a.isArray = true;
-		a.index = $3;	//no checking index that will be a runtime error
+		a.index = $2;	//no checking index that will be a runtime error
 	}
 	else {
 		yyerror("Identifier is not array type");
@@ -820,6 +868,13 @@ var: identifier {
 //	cout << "CHECK: " << sc_symbol_table[indexOf($1)].index << endl << endl;
 	pushArray = true;	//we know when to push an array type, only used if we have a array type on the right hand side of a statement
 	$$ = $1;
+};
+
+index: L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
+//	string t = newTemp();
+//	cout << "= " << $2 << ", " << t << endl;
+//	$$ = strdup(t.c_str());
+	$$ = $2;
 };
 
 
