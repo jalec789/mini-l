@@ -36,8 +36,6 @@
 	int stackCounter = 1;	//used for mulit-declaration, may use for stacks in statements, used in PARAMS and LOCALS
 	int temp_count = 0;	//track and number the number of temporary varibles produced, used in BODY 
 	int label_count = 0;
-	// USE size() instead
-	//int lineNum = 0;// delete this later just for debugging???...
 
 
 	int semicolonCount = 0;	//for debuggin purposes in BODY
@@ -88,8 +86,9 @@
 				return i;
 			}
 		}
-		//Need error line here...???
-		exit(0);
+		//Error
+		string errorMsg = ("Identifier '" + s + "' was not found");
+		yyerror(errorMsg.c_str());
 	}
 
 
@@ -116,13 +115,11 @@
 			return true;
 		}
 		else {
-			cerr << "\n\nError: no function of ID: " << a << "() was found" << endl;
-			exit(0);	//throw into strdup() line number
+			string errorMsg = "\n\nError: no function of ID: " + a + "() was found";
+			yyerror(errorMsg.c_str());	//throw into strdup() line number
 		}
 	}
 
-
-//may need a function to check if identifier is of type array or non-array...???
 
 
 
@@ -130,8 +127,8 @@
 	void pushToScope(identifier a) {
 		for(int i = 0; i < sc_symbol_table.size(); i++) {
 			if(a.ident == sc_symbol_table[i].ident){
-				cerr << "\n\nError: somewhere there already exists an ID: " << a.ident << endl;
-				exit(0);	//throw into strdup() line number
+				//yyerror("Error: somewhere there already exists an ID: " + a.ident);
+				//exit(0);
 			}
 		}
 
@@ -180,8 +177,9 @@
 
 
 %%
-prog_start: %empty	{/*cout << "prog_start -> epsilon\n";*/ /* do we have an error here??? */}
-		| function prog_start {/*printf("prog_start -> function prog_start\n");*/ /* Also make sure to check the function symbol table look for the main function??? */
+prog_start: %empty	{/*cout << "prog_start -> epsilon\n";*/ /* do we have an error here? NO, I dont think so... */}
+		| function prog_start {/*printf("prog_start -> function prog_start\n");*/ 
+	functionIdExists("main"); //make sure main() is a function
 };
 
 // function: FUNCTION identifier SEMICOLON	BEGIN_PARAMS declarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statements END_BODY {};
@@ -189,14 +187,14 @@ prog_start: %empty	{/*cout << "prog_start -> epsilon\n";*/ /* do we have an erro
 function: function_id SEMICOLON	params locals body {
 	cout << "endfunc" << endl << endl;
 	//instruction_list.clear();
-	sc_symbol_table.clear();
+	sc_symbol_table.clear();	//clear local scope of function
 };
 
 function_id: FUNCTION identifier {
 	//we dont use this since this is the first one
 	cout << "func " + string($2) << endl;
 	if (find(functions_symbol_table.begin(), functions_symbol_table.end(), string($2)) != functions_symbol_table.end()) {
-		//show error code that the function identifier is already in use... and exit???
+		//show error code that the function identifier is already in use
 		char temp[128];
 		snprintf(temp, 128, "Redeclaration of function %s", $2);
 		yyerror(temp);
@@ -283,7 +281,6 @@ declaration: identifiers COLON ARRAY L_SQUARE_BRACKET number R_SQUARE_BRACKET OF
 	
 	for(int i = sc_symbol_table.size() - stackCounter; i < sc_symbol_table.size(); i++){
 		sc_symbol_table[i].isArray = true;
-		//I dont think identifier needs to store size because that will most of the time be a runtime error...???
 		cout << ".[] " << sc_symbol_table[i].ident << ", " << to_string($5) << endl;
 	}
 	stackCounter = 1;
@@ -319,7 +316,6 @@ declarations: %empty {/* leave blank */}
 
 
 
-	//can statments be empty???
 statements: statement SEMICOLON statements {/* leave blank */}
 		| statement SEMICOLON {/* leave blank */};
 
@@ -558,8 +554,8 @@ relation-expr: expression comp expression {
 }
 //		| NOT expression comp expression {
 //	//This one is unclear what they are asking for...???
-//	//couldnt we rewrite it as NOT relation-expr ???
-//	//what about NOT expression ???
+//	//couldnt we rewrite it as NOT relation-expr
+//	//what about NOT expression
 //	string t = newTemp();
 //	cout << "! " << t << ", " << $2 << endl;
 //	$$ = strdup(t.c_str());
@@ -644,7 +640,6 @@ multiplicative-expr: term {
 }
 ;
 
-	//remember that a function call is a term. should we add more rules???
 	//term values should place into temps
 term: var {
 
@@ -652,7 +647,7 @@ term: var {
 	//identifier a = instruction_vals[instruction_vals.size() - 1];
 	
 	identifier id = sc_symbol_table[indexOf($1)];
-	//we could have just used instruction_vals.(top).isArray right???
+	//we could have just used instruction_vals.(top).isArray right? NO!!!
 	if(id.isArray){
 		cout << "=[] " << t << ", " << id.ident << ", " << id.index << endl;
 	}
@@ -664,7 +659,6 @@ term: var {
 	
 //cout << "term -> var: " << $$ << endl;
 	
-	//if this is array type we need a different print...??? arrays are overrated
 //	if(pushArray){
 //		string t = newTemp();
 //		cout << "=[] " << t << ", " << $1 << ", " << instruction_vals[instruction_vals.size() - 1].index << endl;
@@ -713,7 +707,6 @@ term: var {
 		cout << "call " << $1 << ", " << t << endl;
 		$$ = strdup(t.c_str());
 	}
-	
 }
 ;
 
@@ -724,24 +717,31 @@ vars: var {/* leave blank... (it would be nice to populate vector here but we ca
 
 //These should populate a vector (to make array types work) AND if needed return the id
 var: identifier {
-//printf("var -> identifier: %s\n",$1);
-	//check to see if id exists AND is NOT array type, if not error and exit...???
-	identifier a;
-	a.ident = $1;
-	instruction_vals.push_back(a);
-	$$ = $1;
+	//indexOf: checks to see if id exists
+	identifier &a = sc_symbol_table[indexOf($1)];
+	//checks IS NOT array type otherwise yyerror()
+	if(a.isArray){
+		yyerror("Identifier is Array type and requires [index]");
+	}
+	else {
+		identifier a;
+		a.ident = $1;
+		instruction_vals.push_back(a);
+		$$ = $1;
+	}
 }
 		| identifier L_SQUARE_BRACKET expression R_SQUARE_BRACKET {
-	//check to see if id exists AND IS array type, if not error and exit...???
-	identifier &a = sc_symbol_table[indexOf($1)];	//yeah this is the only time i'll use a de-ref
-	
+	//indexOf: checks to see if id exists
+	identifier &a = sc_symbol_table[indexOf($1)];
+	//yeah this is the only time i'll use a de-ref
+	//AND IS array type otherwise yyerror()
 	if(a.isArray){
 		a.ident = $1;
 		a.isArray = true;
-		a.index = $3;
+		a.index = $3;	//no checking index that will be a runtime error
 	}
 	else {
-		exit(0); //need error message here
+		yyerror("Identifier is not array type");
 	}
 	//cout << "HELP: " << a.ident << a.index << endl << endl;
 	instruction_vals.push_back(a);
@@ -786,9 +786,10 @@ int main(int argc, char **argv) {
 
 
 void yyerror(const char *MSG) {
-	printf("** Line %d, position %d: %s\n", line, column, MSG);	//error position not outputting correctly in some cases
+	printf("**ERROR: Line %d, position %d: %s\n", line, column, MSG);	//error position not outputting correctly in some cases
 	//printf("** Line %d, position %d: \n", line, MSG);//error position not outputting correctly in some cases, maybe i read it worng, just double check???
 	//printf("");
+	exit(0);
 	
 	//printf("Error at line %d, column %d: unrecognized symbol \"%.*s\"\n",line, column, yyleng, yytext);
 }
