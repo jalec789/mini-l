@@ -8,7 +8,7 @@ Just a lex file. Nothing really intersting.
 #### Phase 2:
 https://www.cs.ucr.edu/~cxu009/teaching/CS152-winter20/webpages2/phase2_parser.html
 
-Run with:
+Sample code is provided in Phase3/SampleCode. Use the .min files only and run with:
 ```
 make
 ./parser [your_code.min]
