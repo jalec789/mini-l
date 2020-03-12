@@ -659,6 +659,7 @@ term: var {
 	
 //cout << "term -> var: " << $$ << endl;
 	
+	//if this is array type we need a different print...? arrays are overrated but we should be done with this one
 //	if(pushArray){
 //		string t = newTemp();
 //		cout << "=[] " << t << ", " << $1 << ", " << instruction_vals[instruction_vals.size() - 1].index << endl;
@@ -680,13 +681,27 @@ term: var {
 		| L_PAREN expression R_PAREN {
 	$$ = $2;
 }
-		| SUB var %prec UMINUS {}
-		| SUB number %prec UMINUS {
-//	string t = newTemp();
-//	cout << "= " << t << ", -" << to_string($2) << endl;//how do we post negative values???
-//	$$ = strdup(t.c_str());
+
+		| SUB var %prec UMINUS {
+	//I know its dumb but since we weren't given any negative number examples this is how we are going to do negative numbers lol
+	//for these negative values just make a temp that equals =(0-1) then multiply that temp to the $val
+	string t = newTemp();
+	cout << "- " << t << ", 0, 1" << endl;
+	cout << "* " << t << ", " << $2 << ", " << t << endl;
+	$$ = strdup(t.c_str());
 }
-		| SUB L_PAREN expression R_PAREN %prec UMINUS {}
+		| SUB number %prec UMINUS {
+	string t = newTemp();
+	cout << "- " << t << ", 0, 1" << endl;
+	cout << "* " << t << ", " << $2 << ", " << t << endl;
+	$$ = strdup(t.c_str());
+}
+		| SUB L_PAREN expression R_PAREN %prec UMINUS {
+	string t = newTemp();
+	cout << "- " << t << ", 0, 1" << endl;
+	cout << "* " << t << ", " << $3 << ", " << t << endl;
+	$$ = strdup(t.c_str());
+}
 		| identifier L_PAREN expressions R_PAREN {
 	//check if there exists this function_id, this function call will exit if not
 	if (functionIdExists($1)) {
