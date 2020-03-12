@@ -22,7 +22,7 @@ https://www.cs.ucr.edu/~cxu009/teaching/CS152-winter20/webpages3/phase3_code_gen
 
 
 ## How to run Phase 3
-Sample code provided in folders. The interpreter .mil_run was provided by professor. Make the .mil code using ./parser and store into some random txt file. Then using that txt file run ./mil_run with the given interpreter language output.
+Sample code is provided in Phase3/SampleCode. The interpreter .mil_run was provided by professor. Make the .mil code using ./parser and store into some random txt file. Then using that txt file run ./mil_run with the given interpreter language output.
 
 ```
 make
