@@ -19,6 +19,7 @@ And you'll get the order of the parse tree, remember to read it from the bottom 
 
 #### Phase 3:
 https://www.cs.ucr.edu/~cxu009/teaching/CS152-winter20/webpages3/phase3_code_generator.html
+Code generation phase, .y file has all code needed to make
 
 
 ## How to run Phase 3
