@@ -667,8 +667,9 @@ comp: EQ {
 expressions: expression {
 	expression_vals.push_back($1);
 }
-		| expression COMMA expressions {/* leave blank */}
-;
+		| expression COMMA expressions {
+	expression_vals.push_back($1);
+};
 
 expression: multiplicative-expr {
 	$$ = $1;
@@ -771,8 +772,9 @@ term: var {
 	//check if there exists this function_id, this function call will exit if not
 	if (functionIdExists($1)) {
 		//start at 1 since index 0 will have the function id
+		int size = expression_vals.size()-1;
 		for(int i = 0; i < expression_vals.size(); i++){
-			cout << "param " << expression_vals[i] << endl;
+			cout << "param " << expression_vals[size - i] << endl;
 		}
 		//instruction_vals.clear();
 		expression_vals.clear();	//This will cause a problem when a function parameter expression is negative???
