@@ -404,12 +404,20 @@ statement: var ASSIGN expression {
 }
 		| WRITE vars {
 	//this is not working correctly right now but I believe we need to complete assign and others for it to look correct
+//	for(int i = 0; i < instruction_vals.size(); i++){
+//		if(!instruction_vals[i].isArray){
+//			cout << ".> " << instruction_vals[i].ident << endl;
+//		}
+//		else {
+//			cout << ".[]> " << instruction_vals[i].ident << ", " << instruction_vals[i].index << endl;
+//		}
+//	}
 	for(int i = 0; i < instruction_vals.size(); i++){
-		if(!instruction_vals[i].isArray){
-			cout << ".> " << instruction_vals[i].ident << endl;
+		if(!instruction_vals[instruction_vals.size() - i- 1].isArray){
+			cout << ".> " << instruction_vals[instruction_vals.size() - i- 1].ident << endl;
 		}
 		else {
-			cout << ".[]> " << instruction_vals[i].ident << ", " << instruction_vals[i].index << endl;
+			cout << ".[]> " << instruction_vals[instruction_vals.size() - i- 1].ident << ", " << instruction_vals[instruction_vals.size() - i- 1].index << endl;
 		}
 	}
 	instruction_vals.clear();
@@ -726,8 +734,19 @@ term: var {
 ;
 
 //we'll have (var: identifier) handle purals with push_back() - No can do here, it must be made in singular var. leave blank for now
-vars: var {/* leave blank... (it would be nice to populate vector here but we can't since we need to recieve 2 values of input for array type identifiers) */}
-		|var COMMA vars {/* leave blank... */};
+vars: var {
+	identifier &a = sc_symbol_table[indexOf($1)];
+	instruction_vals.push_back(a);
+	
+//	for(int i = 0; i < instruction_vals.size(); i++){
+//		cout << "CHECK: " << instruction_vals[i].ident << endl;
+//	}
+}
+		|var COMMA vars {
+	identifier &a = sc_symbol_table[indexOf($1)];
+	instruction_vals.push_back(a);
+	
+};
 
 
 //These should populate a vector (to make array types work) AND if needed return the id
@@ -741,7 +760,7 @@ var: identifier {
 	else {
 		identifier a;
 		a.ident = $1;
-		instruction_vals.push_back(a);
+		//instruction_vals.push_back(a);
 		$$ = $1;
 	}
 }
@@ -759,7 +778,8 @@ var: identifier {
 		yyerror("Identifier is not array type");
 	}
 	//cout << "HELP: " << a.ident << a.index << endl << endl;
-	instruction_vals.push_back(a);
+//	instruction_vals.push_back(a);
+
 //	for(int i = 0; i < instruction_vals.size(); i++){
 //		cout << instruction_vals[i].ident << endl;
 //	}
