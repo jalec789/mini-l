@@ -35,3 +35,10 @@ To view the interpreter code
 make
 ./parser [your_code.min]
 ```
+
+## Known Issues:
+- Functions don't keep track of their respective parameter count
+
+- Arrays being set or going beyond the scope is a definitive runtime error
+
+- negative -0 is a possible assignment but will default to regular 0
