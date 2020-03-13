@@ -674,12 +674,12 @@ expressions: expression {
 expression: multiplicative-expr {
 	$$ = $1;
 }
-		| multiplicative-expr ADD expression {
+		| expression ADD expression {
 	string t = newTemp();
 	cout << "+ " << t << ", " << $1 << ", " << $3 << endl;
 	$$ = strdup(t.c_str());
 }
-		| multiplicative-expr SUB expression {
+		| expression SUB expression {
 	string t = newTemp();
 	cout << "- " << t << ", " << $1 << ", " << $3 << endl;
 	$$ = strdup(t.c_str());
@@ -703,8 +703,7 @@ multiplicative-expr: term {
 	string t = newTemp();
 	cout << "% " << t << ", " << $1 << ", " << $3 << endl;
 	$$ = strdup(t.c_str());
-}
-;
+};
 
 	//term values should place into temps
 term: var {
@@ -747,7 +746,6 @@ term: var {
 		| L_PAREN expression R_PAREN {
 	$$ = $2;
 }
-
 		| SUB var %prec UMINUS {
 	//I know its dumb but since we weren't given any negative number examples this is how we are going to do negative numbers lol
 	//for these negative values just make a temp that equals =(0-1) then multiply that temp to the $val
